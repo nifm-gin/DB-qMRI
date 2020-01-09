@@ -6,11 +6,15 @@
 % boundaries of this space. Two 2-dimensional parameter subspaces was
 % defined: one to sample the parameters of the dictionary, and a larger one
 % for the test.
+%
+% Fabien Boux 01/2020
 
 
 %% Setting
 
-display = 1;
+% Execution settings
+verbose = 1;
+backup  = 1;
 
 % Signal settings
 nb_param = 2;
@@ -36,6 +40,7 @@ Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
+snr_train  	= inf;
 
 
 %% Data Creation
@@ -89,7 +94,7 @@ end
 %% Processing 
 
 % GLLiM learning
-Dic{1}.MRSignals       = Xtrain;
+Dic{1}.MRSignals       = AddNoise(Xtrain, snr_train);
 Dic{1}.Parameters.Par  = Ytrain;
 [~,Parameters]  = AnalyzeMRImages([],Dic,'RegressionMRF',Parameters);
 
@@ -98,7 +103,7 @@ intt_   = intt(1):(intt(end) - intt(1))/N:intt(2);
 
 for s1 = floor(lw/2)+1:length(intt_)-floor(lw/2)
     
-    if display == 1, disp([num2str(s1) '/' num2str(length(floor(lw/2)+1:length(intt_)-floor(lw/2)))]); end
+    if verbose == 1, disp([num2str(s1) '/' num2str(length(floor(lw/2)+1:length(intt_)-floor(lw/2)))]); end
 
     inter1(s1) = intt_(s1);
 
@@ -133,9 +138,10 @@ end
 
 %% Saving 
 
-clear tmp* Xtrain* Ytrain* Dic s1
-save(['temp/' mfilename])
-
+if backup == 1
+    clear tmp* Xtrain* Ytrain* Dic s1
+    save(['temp/' mfilename])
+end
 
 %% Display
 
@@ -195,4 +201,11 @@ end
 set(gca, 'fontsize', 18)
 set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
+
+
+%% Exporting figures
+
+if backup == 1
+    savefig(fig, ['outputs/' mfilename])
+end
 
