@@ -1,5 +1,6 @@
 
 %% Description
+%
 % The DBL method estimates the parameters using a continuous function that
 % is not restricted to the dictionary parameter space. We therefore 
 % investigated the behaviors of the DBL and DBM methods outside the
@@ -7,7 +8,7 @@
 % defined: one to sample the parameters of the dictionary, and a larger one
 % for the test.
 %
-% Fabien Boux 01/2020
+% Fabien Boux - 01/2020
 
 
 %% Setting
@@ -43,7 +44,7 @@ Parameters.Lw = 0;
 snr_train  	= inf;
 
 
-%% Data Creation
+%% Creating data
 
 % Adding to path
 addpath(genpath('functions'))
@@ -206,6 +207,6 @@ set(gca,'YDir','normal')
 %% Exporting figures
 
 if backup == 1
-    savefig(fig, ['outputs/' mfilename])
+    savefig(fig, ['figures/' mfilename])
 end
 

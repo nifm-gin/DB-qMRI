@@ -26,12 +26,12 @@ param   = [3 3 3 ...
            7 7];
 signals = [216  1000 4096 ... %6^3 10^3 16^3
            1024 3125 7776 ... %4^5 5^5 6^5
-           2187];% 16384];       %3^7 4^7 
+           2187 16384];       %3^7 4^7 
 
 % Experiment settings
 
 nb_test_signals = 1000;
-nb_repetition = 30; %1000;
+nb_repetition = 1000;
 snr  	= inf;
 
 % Method settings
@@ -52,16 +52,19 @@ addpath(genpath('tools'))
 
 % Expe rand ID
 Id      = randi(2^16,1);
+% You can specify a value to replay an experiment saved in the temp folder
 
 
 %% Processing 
+
+if verbose >= 1, disp('Nber of parameters - Dictionary size'); end
 
 for exp = 1:length(signals) % for all experiments
     
     nb_param = param(exp);
     nb_train_signals = signals(exp);
         
-    if verbose == 1, disp([num2str(nb_param) ' - ' num2str(nb_train_signals)]); end
+    if verbose >= 1, disp([num2str(nb_param) ' - ' num2str(nb_train_signals)]); end
     
     mRMSE_DBM = nan(3, nb_repetition);
     mMAE_DBM = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
@@ -78,14 +81,8 @@ for exp = 1:length(signals) % for all experiments
             Xtest(sim,:) = toyMRsignal(Ytest(sim,:),p(1:nb_param));
         end
         Xtest   = AddNoise(Xtest, snr);
-
-        % Prepare outliers structure
-        outliers = [];
-        for r = 1:nb_param, outliers{r} = int; end
-
-        %sizes(:,rep) = [size(X,1) size(X,1) size(X,1)];
-
-        for s = 1:3 %for 3 sampling strategies
+        
+        for s = 1:3 %for the 3 sampling strategies
 
             X = []; Y = [];
             switch s 
@@ -148,17 +145,17 @@ for exp = 1:length(signals) % for all experiments
 
     % Save results
     clear *tmp* Dico X* Y* Estim
-    if ~exist(['temp/' num2str(Id)],'dir')
-        mkdir(['temp/' num2str(Id)])
+    if ~exist(['temp/ParameterSpaceSampling/' num2str(Id)],'dir')
+        mkdir(['temp/ParameterSpaceSampling/' num2str(Id)])
     end
-    save(['temp/' num2str(Id) '/' num2str(nb_param) '-' num2str(nb_train_signals)])
+    save(['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(nb_param) '-' num2str(nb_train_signals) '.mat'])
 
     % % Display histogram of errors
     % fig = figure;
     % 
     % subplot(121)
     % hist(mRMSE',0:0.0005:0.08)
-    % xlabel('Mean RMSE (seconds)'); ylabel('Histogram')
+    % xlabel('Average RMSE (s) (seconds)'); ylabel('Histogram')
     % legend({'Regular grid', 'Random uniform sampling', 'Quasi random sampling'})
     % xlim([.005 .08]) 
     % 
@@ -172,15 +169,12 @@ end
    
 %% Displaying
 
-titles  = {'(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)'};
-alpha   = 0.001;
-
 DBM_rmse = struct([]);
 DBL_rmse = struct([]);
 
 for i = 1:length(signals)
-    filename = ['temp/' Id '/' num2str(param(exp)) '-' num2str(signals(exp))];
-    %num2str(Id)
+    filename = ['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(param(exp)) '-' num2str(signals(exp)) '.mat'];
+    
     if exist(filename,'file')
         load(filename,'mRMSE_DBM','mRMSE_DBL');
         DBM_rmse{i} = mRMSE_DBM;
@@ -191,16 +185,45 @@ for i = 1:length(signals)
     end
 end
 
+
+% main figure
+titles = {'(a)', '(b)', '(c)'};
+
 fig = figure;
+c = 0;
+for i = [1 4 7]
+    c = c + 1;
+    
+    dat     = DBL_rmse{i}';
+    h(c)    = subplot(1,3,c);
+    
+    boxplot(dat,'symbol','')
+    if c == 1
+        ylabel('Average RMSE (s)')
+    else
+        ylabel(' ')
+    end
+    xtickangle(45)
+    set(gca, 'fontsize',15, 'XTickLabels',{'Grid','Rand','QRand'})
+    
+    title(titles{c})
+end
+
+
+% supplementary figure
+titles  = {'(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)'};
+alpha   = 0.001;
+
+fig_supp = figure;
 
 for i = 1:length(DBL_rmse)
     
-    dat     = DBL_rmse{i};
+    dat     = [DBM_rmse{i}; DBL_rmse{i}]';
     h(i)    = subplot(3,3,i);
     
     boxplot(dat,'symbol','','OutlierSize',1)
     if i == 1 || i == 4 || i == 7
-        ylabel('Mean RMSE')
+        ylabel('Average RMSE (s)')
     else
         ylabel(' ')
     end
@@ -212,9 +235,9 @@ for i = 1:length(DBL_rmse)
     xtickangle(45)
     pause(.2)
     
-    if verbose == 1
-        disp(['KS test: ' num2str(kstest(dat(:,1),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,2),'Alpha',.0001)) ' - ' num2str(kstest(dat(:,3),'Alpha',alpha))])
-        disp(['T test: ' num2str(ttest2(dat(:,1),dat(:,2),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,1),dat(:,3),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal'))])
+    if verbose >= 1
+%         disp(['KS test: ' num2str(kstest(dat(:,1),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,2),'Alpha',.0001)) ' - ' num2str(kstest(dat(:,3),'Alpha',alpha))])
+%         disp(['T test: ' num2str(ttest2(dat(:,1),dat(:,2),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,1),dat(:,3),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal'))])
     end
     
     xt  = get(gca, 'XTick');
@@ -225,7 +248,7 @@ for i = 1:length(DBL_rmse)
     count = 0;
     boxplot(dat,'symbol','','OutlierSize',1)
     if i == 1 || i == 4 || i == 7
-        ylabel('Mean RMSE')
+        ylabel('Average RMSE (s)')
     else
         ylabel(' ')
     end
@@ -237,9 +260,9 @@ for i = 1:length(DBL_rmse)
     xtickangle(45)
     pause(.2)
     
-    if verbose == 1
-        disp(['KS test: ' num2str(kstest(dat(:,1),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,2),'Alpha',.0001)) ' - ' num2str(kstest(dat(:,3),'Alpha',alpha))])
-        disp(['T test: ' num2str(ttest2(dat(:,1),dat(:,2),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,1),dat(:,3),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal'))])
+    if verbose >= 1
+%         disp(['KS test: ' num2str(kstest(dat(:,1),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,2),'Alpha',.0001)) ' - ' num2str(kstest(dat(:,3),'Alpha',alpha))])
+%         disp(['T test: ' num2str(ttest2(dat(:,1),dat(:,2),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,1),dat(:,3),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal'))])
     end
     
 %     xt  = get(gca, 'XTick');
@@ -284,20 +307,21 @@ for i = 1:length(DBL_rmse)
 end
 
 linkaxes(h(1), 'y')
-ylim(h(1),[0 0.2])
+ylim(h(1),[0.0 0.1])
 linkaxes(h(2:3), 'y')
 ylim(h(2:3),[0.01 0.11])
 
 linkaxes(h(4:6), 'y')
-ylim(h(4:6),[0.03 0.16])
+ylim(h(4:6),[0.0 0.1])
 
 linkaxes(h(7:8), 'y')
-ylim(h(7:8),[0.05 0.2])
+ylim(h(7:8),[0.0 0.1])
 
 
 %% Exporting figures
 
 if backup == 1
-    savefig(fig, ['outputs/' mfilename])
+    savefig(fig, 'figures/ParameterSpaceSampling')
+    savefig(fig_supp, 'figures/ParameterSpaceSampling-supp')
 end
 

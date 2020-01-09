@@ -1,8 +1,9 @@
 
 %% Description
+%
 % Explaination
 %
-% Fabien Boux 01/2020
+% Fabien Boux - 01/2020
 
 
 %% Setting
@@ -16,9 +17,15 @@ backup  = 1;
 % Experiment settings
 
 % Regression settings
+Parameters.K = 50;
+Parameters.cstr.Sigma  = 'd*';
+Parameters.cstr.Gammat = ''; 
+Parameters.cstr.Gammaw = '';
+Parameters.Lw = 0;
+snr_train  	= inf;
 
 
-%% Data Creation
+%% Creating data
 
 % Adding to path
 addpath(genpath('functions'))
@@ -38,12 +45,12 @@ if backup == 1
 end
 
 
-%% Display
+%% Displaying
 
 
 %% Exporting figures
 
 if backup == 1
-    savefig(fig, ['outputs/' mfilename])
+    savefig(fig, ['figures/' mfilename])
 end
 
