@@ -210,7 +210,7 @@ for i = [1 4 7]
 end
 
 
-% supplementary figure
+%% supplementary figure
 titles  = {'(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)'};
 alpha   = 0.001;
 
@@ -318,10 +318,52 @@ linkaxes(h(7:8), 'y')
 ylim(h(7:8),[0.0 0.1])
 
 
+%% Sampling strategies illustration
+
+grid_bvf        = 0.05:0.05:0.95;
+grid_vsi        = 0.05:0.05:0.95;
+[Xgrid, Ygrid]  = meshgrid(grid_bvf, grid_vsi);
+
+nb_signal       = size(Xgrid,1) * size(Xgrid,2);
+
+rand_bvf        = rand(1, nb_signal);
+rand_vsi        = rand(1, nb_signal);
+
+% vect            = net(sobolset(2),nb_signal);
+vect            = net(scramble(sobolset(2),'MatousekAffineOwen'),nb_signal);
+qrand_bvf       = vect(:,1);
+qrand_vsi       = vect(:,2);
+
+markersize = 10;
+xl = [0 1];
+yl = [0 1];
+
+fig_illustration = figure;
+clear h
+h(1) = subplot(131); plot(reshape(Xgrid,1,[]), reshape(Ygrid,1,[]), '.', 'LineWidth', 2, 'MarkerSize', markersize)
+xlabel('Second parameter'); ylabel('First parameter')
+title('(a)') %title('Regular sampling')
+xlim(xl); ylim(yl)
+
+
+h(2) = subplot(132); plot(rand_bvf, rand_vsi, '.', 'LineWidth', 2, 'MarkerSize', markersize)
+xlabel('Second parameter'); ylabel('First parameter')
+title('(b)') %title('Random sampling')
+xlim(xl); ylim(yl)
+
+h(3) = subplot(133); plot(qrand_bvf, qrand_vsi, '.', 'LineWidth', 2, 'MarkerSize', markersize)
+xlabel('Second parameter'); ylabel('First parameter')
+title('(c)') %title('quasi-Random sampling')
+xlim(xl); ylim(yl)
+
+set(h, 'fontsize', 18, 'XTickLabel',[], 'YTickLabel',[])
+
+
 %% Exporting figures
 
 if backup == 1
     savefig(fig, 'figures/ParameterSpaceSampling')
     savefig(fig_supp, 'figures/ParameterSpaceSampling-supp')
+    savefig(fig_illustration, 'figures/ParameterSpaceSampling-illustration')
 end
 
