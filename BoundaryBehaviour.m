@@ -36,6 +36,7 @@ int_all = {{[.25 .45], [.40 .90]},...
             };
 
 % Regression settings
+Parameters = [];
 Parameters.K = 50;
 Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 

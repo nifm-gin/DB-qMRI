@@ -30,6 +30,7 @@ snr_levels = [logspace(1, 2.035, 40) inf];
 nb_test_signals = 10000;
 
 % Regression settings
+Parameters = [];
 Parameters.K = 50;
 Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 

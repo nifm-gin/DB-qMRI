@@ -34,11 +34,12 @@ nb_int  = 2; % Can be 2 or 3 (default 2)
 
 int_all = {{[.25 .45], [.40 .90]},...
             {[1 1.3], [.15 .35]},...
-            {[.6  1.5], [.6 1.2]},... % {[.6  1], [.45 .7]},...
+            {[.6  1.3], [.6 1.3]},... % {[.6  1], [.45 .7]},...
             };
 nb      = 3; % number of added signals
 
 % Regression settings
+Parameters = [];
 Parameters.K = 50;
 Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 

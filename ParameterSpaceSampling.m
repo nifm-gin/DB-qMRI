@@ -36,6 +36,7 @@ snr  	= inf;
 
 % Method settings
 methods = {'ClassicMRF', 'RegressionMRF'};
+Parameters = [];
 Parameters.K = 50;
 Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
