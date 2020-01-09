@@ -1,7 +1,10 @@
 
 %% Description
 %
-% Explaination
+% We investigate the impact of dictionary size on the estimation accuracy,
+% we generated dictionaries with different sizes and considered different
+% number of parameters. We also characterize the impact of noise and we
+% measure the computation time.
 %
 % Fabien Boux - 01/2020
 
