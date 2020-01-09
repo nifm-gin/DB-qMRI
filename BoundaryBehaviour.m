@@ -104,7 +104,7 @@ intt_   = intt(1):(intt(end) - intt(1))/N:intt(2);
 
 for s1 = floor(lw/2)+1:length(intt_)-floor(lw/2)
     
-    if verbose == 1, disp([num2str(s1) '/' num2str(length(floor(lw/2)+1:length(intt_)-floor(lw/2)))]); end
+    if verbose == 1, disp([num2str(s1-floor(lw/2)) '/' num2str(length(floor(lw/2)+1:length(intt_)-floor(lw/2)))]); end
 
     inter1(s1) = intt_(s1);
 
@@ -141,8 +141,9 @@ end
 
 if backup == 1
     clear tmp* Xtrain* Ytrain* Dic s1
-    save(['temp/' mfilename])
+    save(['temp/' 'BoundaryBehaviour'])
 end
+
 
 %% Display
 
@@ -156,14 +157,14 @@ err     = Rmse_gllim;
 bounds = [0 .3];
 
 h(nb_int-1) = subplot(2,length(int_all)-1,nb_int-1);
-%     figure
+
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','k',  'linewidth',3)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','k',  'linewidth',3)
-    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','k',  'linewidth',3)
-    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','k',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
 end
 colormap(mycmap()); colorbar
 xlabel('Second parameter'); ylabel('First parameter')
@@ -184,10 +185,10 @@ err     = Rmse_grid;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','k',  'linewidth',3)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','k',  'linewidth',3)
-    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','k',  'linewidth',3)
-    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','k',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
 end
 colormap(mycmap()); colorbar
 xlabel('Second parameter'); ylabel('First parameter')
@@ -207,6 +208,6 @@ set(gca,'YDir','normal')
 %% Exporting figures
 
 if backup == 1
-    savefig(fig, ['figures/' mfilename])
+    savefig(fig, ['figures/' 'BoundaryBehaviour'])
 end
 

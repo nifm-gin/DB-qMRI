@@ -335,16 +335,16 @@ qrand_bvf       = vect(:,1);
 qrand_vsi       = vect(:,2);
 
 markersize = 10;
-xl = [0 1];
-yl = [0 1];
+xl  = [0 1];
+yl  = [0 1];
 
 fig_illustration = figure;
+
 clear h
 h(1) = subplot(131); plot(reshape(Xgrid,1,[]), reshape(Ygrid,1,[]), '.', 'LineWidth', 2, 'MarkerSize', markersize)
 xlabel('Second parameter'); ylabel('First parameter')
 title('(a)') %title('Regular sampling')
 xlim(xl); ylim(yl)
-
 
 h(2) = subplot(132); plot(rand_bvf, rand_vsi, '.', 'LineWidth', 2, 'MarkerSize', markersize)
 xlabel('Second parameter'); ylabel('First parameter')
