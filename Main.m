@@ -1,9 +1,9 @@
 
 %% Description
 %
-% The aim of this script is to run all the others and to produce
-% numerical experiment results that allows to illustrate the interest of
-% the dictionary-based learning (DBL) method.
+% The aim of this script is to run all the others and to produce numerical
+% experiment results that allow to illustrate the interest of the
+% dictionary-based learning (DBL) method.
 %
 % Fabien Boux - 01/2020
 
@@ -58,12 +58,26 @@ if close_figure == 1, close all; end
 %       and the DBL methods on dictionary smaller than this space.
 %
 %   - BoundaryBehaviour-supp.fig 
-%       Same experiment with few randomly picked signals added in the 
+%       Same experiment with few randomly picked signals added to the 
 %       dictionary
 
 clear 
 BoundaryBehaviour
 BoundaryBehaviour_supp
+if close_figure == 1, close all; end
+
+
+%% Impact of noise on the dictionary signals
+% Produce 1 figure: 
+%   - NoisyDicoSignals-supp.fig
+%       Average RMSE of DBL method are given as a function of the SNR for
+%       different dictionary sizes and number of parameters. We compute the
+%       estimates with an infinite SNR  (no noise), three values of SNR:
+%       30, 60 and 90 and with SNR values randomly picked between 10 and
+%       100 for each dictionary signal.
+
+clear 
+NoisyDicoSignals
 if close_figure == 1, close all; end
 
 
