@@ -22,7 +22,7 @@ Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
-snr_train  	= inf;
+snr_train = inf;
 
 
 %% Creating data

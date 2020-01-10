@@ -17,27 +17,27 @@ verbose = 1; %0, 1 or 2 for more details
 backup  = 1;
 
 % Signal settings
-int   	= [0 1];
+int   	= [.1 1];
 p       = [.01 .01];
 while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
 
 param   = [3 3 3 ...
            5 5 5 ...
-           7 7];
-signals = [216  1000 4096 ... %6^3 10^3 16^3
-           1024 3125 7776 ... %4^5 5^5 6^5
-           2187 16384];       %3^7 4^7 
+           7];
+signals = [512    1728   4096 ... %8^3 12^3 16^3
+           1024   3125   7776 ... %4^5 5^5 6^5
+           2187  16384];         %3^7 4^7 
 
 % Experiment settings
 nb_test_signals = 1000;
 nb_repetition = 500;
-snr  	= inf;
+snr_test = inf;
 
 % Method settings
-methods = {'DBM', 'DBL'};
+methods = {'DBM','DBL'};
 Parameters = [];
 Parameters.K = 50;
-Parameters.cstr.Sigma  = 'd*';
+Parameters.cstr.Sigma = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
@@ -66,10 +66,12 @@ for exp = 1:length(signals) % for all experiments
         
     if verbose >= 1, disp([num2str(nb_param) ' - ' num2str(nb_train_signals)]); end
     
-    mRMSE_DBM = nan(3, nb_repetition);
-    mMAE_DBM = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
-    mMAE_DBL = mRMSE_DBM; mNRMSE_DBL = mRMSE_DBM; mNMAE_DBL = mRMSE_DBM;
-
+    mRMSE_DBM   = nan(3, nb_repetition);
+    mMAE_DBM    = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
+    mRMSE_DBL   = mRMSE_DBM;
+    mMAE_DBL    = mRMSE_DBM; mNRMSE_DBL = mRMSE_DBM; mNMAE_DBL = mRMSE_DBM;
+    sizes       = nan(3,nb_repetition);
+    
     parfor rep = 1:nb_repetition
 
         if verbose == 2, disp([num2str(rep) '/' num2str(nb_repetition)]); end
@@ -78,9 +80,9 @@ for exp = 1:length(signals) % for all experiments
         Ytest   = int(1) + (int(2) - int(1)) * rand(nb_test_signals,nb_param);
         Xtest   = [];
         for sim = 1:size(Ytest,1)
-            Xtest(sim,:) = toyMRsignal(Ytest(sim,:),p(1:nb_param));
+            Xtest(sim,:) = toyMRsignal(Ytest(sim,:), p(1:nb_param));
         end
-        Xtest   = AddNoise(Xtest, snr);
+        Xtest   = AddNoise(Xtest, snr_test);
         
         for s = 1:3 %for the 3 sampling strategies
 
@@ -92,24 +94,26 @@ for exp = 1:length(signals) % for all experiments
                     v       = int(1)+step/2:step:int(2)-step/2;
                     Y       = arrangement(v,nb_param);
                     for sim = 1:size(Y,1)
-                        X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param));
+                        X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
                     end
                     if nb_train_signals ~= length(Y), warning('Not enought signals in grid'); end
-
+                    
                 % Generate random uniform dico    
                 case 2 
                     Y       = int(1) + (int(2) - int(1)) * rand(nb_train_signals,nb_param);
                     for sim = 1:size(Y,1)
-                        X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param));
+                        X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
                     end
 
                 % Generate quasi-random dico
                 case 3 
                     Y       = int(1) + (int(2) - int(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb_train_signals);
                     for sim = 1:size(Y,1)
-                        X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param));
+                        X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
                     end
             end
+            
+            sizes(s,rep) = size(Y,1);
 
             % Prepare dico
             Dico = [];
@@ -134,7 +138,7 @@ for exp = 1:length(signals) % for all experiments
                 tic;
                 Estim 	= AnalyzeMRImages(Xtest,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
 
-                t_DBL(s,rep)        =  toc;
+                t_DBL(s,rep)        = toc;
                 mRMSE_DBL(s,rep)    = mean(Estim.Regression.Errors.Rmse);
                 mMAE_DBL(s,rep)     = mean(Estim.Regression.Errors.Mae);
                 mNRMSE_DBL(s,rep)   = mean(Estim.Regression.Errors.Nrmse);
@@ -207,7 +211,7 @@ for i = [1 4 7]
         ylabel(' ')
     end
     xtickangle(45)
-    set(gca, 'fontsize',15, 'XTickLabels',{'Grid','Rand','QRand'})
+    set(gca, 'fontsize',15, 'XTickLabels',{'Regular','Rand','QRand'})
     
     title([titles{c} ' ' num2str(title_nb_param(i)) ' parameters'])
 end
@@ -258,7 +262,7 @@ for i = 1:length(DBL_rmse)
         ylabel(' ')
     end
     xtickangle(45)
-    set(gca,'linew',1.5, 'fontsize',15, 'XTickLabels',{'Grid','Rand','QRand'})
+    set(gca,'linew',1.5, 'fontsize',15, 'XTickLabels',{'Regular','Rand','QRand'})
     
     title([titles{c} ' ' num2str(title_nb_signals(i)) ' signals'])
     set(findobj(gca,'type','line'),'linew',1.5)
@@ -311,9 +315,7 @@ for i = 1:length(DBL_rmse)
 %     end
 end
 
-linkaxes(h(1), 'y')
-% ylim(h(1),[0.0 0.1])
-linkaxes(h(2:3), 'y')
+linkaxes(h(1:3), 'y')
 % ylim(h(2:3),[0.01 0.11])
 linkaxes(h(4:6), 'y')
 % ylim(h(4:6),[0.0 0.1])
@@ -332,7 +334,6 @@ nb_signal       = size(Xgrid,1) * size(Xgrid,2);
 rand_bvf        = rand(1, nb_signal);
 rand_vsi        = rand(1, nb_signal);
 
-% vect            = net(sobolset(2),nb_signal);
 vect            = net(scramble(sobolset(2),'MatousekAffineOwen'),nb_signal);
 qrand_bvf       = vect(:,1);
 qrand_vsi       = vect(:,2);
