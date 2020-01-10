@@ -17,7 +17,7 @@ backup  = 1;
 int   	= [0 1];
 p       = [.01 .01];
 while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
-nb_param = [5 7];
+nb_param = [3 5 7];
 nb_signals = 3:5;
 nb_signals = repmat(nb_signals,length(nb_param),1);
 for i = 1:length(nb_param), nb_signals(i,:) = nb_signals(i,:).^nb_param(i); end
@@ -83,35 +83,35 @@ for n = 1:size(nb_signals,1)
             % No noise
             Dico = DicoR;
             Dico{1}.MRSignals   = AddNoise(DicoR{1}.MRSignals,snr_on_dico(1));
-            Estim               = AnalyzeMRImages(XtestN,Dico,'RegressionMRF',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
+            Estim               = AnalyzeMRImages(XtestN,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
             mNRMSE1(snr,n,f)  = mean(Estim.Regression.Errors.Nrmse);
             mRMSE1(snr,n,f)   = mean(Estim.Regression.Errors.Rmse);
             mMAE1(snr,n,f)    = mean(Estim.Regression.Errors.Mae);
             
             % 1st SNR
             Dico{1}.MRSignals   = AddNoise(DicoR{1}.MRSignals,snr_on_dico(2));
-            Estim               = AnalyzeMRImages(XtestN,Dico,'RegressionMRF',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
+            Estim               = AnalyzeMRImages(XtestN,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
             mNRMSE2(snr,n,f)    = mean(Estim.Regression.Errors.Nrmse);
             mRMSE2(snr,n,f)     = mean(Estim.Regression.Errors.Rmse);
             mMAE2(snr,n,f)      = mean(Estim.Regression.Errors.Mae);
             
             % 2nd SNR
             Dico{1}.MRSignals   = AddNoise(DicoR{1}.MRSignals,snr_on_dico(3));
-            Estim               = AnalyzeMRImages(XtestN,Dico,'RegressionMRF',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
+            Estim               = AnalyzeMRImages(XtestN,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
             mNRMSE3(snr,n,f)    = mean(Estim.Regression.Errors.Nrmse);
             mRMSE3(snr,n,f)     = mean(Estim.Regression.Errors.Rmse);
             mMAE3(snr,n,f)      = mean(Estim.Regression.Errors.Mae);
             
             % 3rd SNR
             Dico{1}.MRSignals   = AddNoise(DicoR{1}.MRSignals,snr_on_dico(4));
-            Estim               = AnalyzeMRImages(XtestN,Dico,'RegressionMRF',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
+            Estim               = AnalyzeMRImages(XtestN,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
             mNRMSE4(snr,n,f)    = mean(Estim.Regression.Errors.Nrmse);
             mRMSE4(snr,n,f)     = mean(Estim.Regression.Errors.Rmse);
             mMAE4(snr,n,f)      = mean(Estim.Regression.Errors.Mae);
             
             % range SNR
             Dico{1}.MRSignals   = AddNoise(DicoR{1}.MRSignals, 10+90*rand(size(DicoR{1}.MRSignals,1),1));
-            Estim               = AnalyzeMRImages(XtestN,Dico,'RegressionMRF',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
+            Estim               = AnalyzeMRImages(XtestN,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)),outliers);
             mNRMSE5(snr,n,f)    = mean(Estim.Regression.Errors.Nrmse);
             mRMSE5(snr,n,f)     = mean(Estim.Regression.Errors.Rmse);
             mMAE5(snr,n,f)      = mean(Estim.Regression.Errors.Mae);
@@ -146,21 +146,21 @@ for n = 1:size(nb_signals,1)
         
         ax(f) = subplot(size(nb_signals,1),size(nb_signals,2), size(nb_signals,2) *(n-1) + f);
         hold on
+        plot([0 120], [mRMSE1(end,n,f) mRMSE1(end,n,f)], '--', 'linewidth',1.5, 'color', colors(1,:),'HandleVisibility','off')  
         plot(real_snr(:,n,f), mRMSE1(:,n,f), '.-','markersize',15, 'color', colors(1,:))
-        plot([0 120], [mRMSE1(end,n,f) mRMSE1(end,n,f)], '--', 'color', colors(1,:),'HandleVisibility','off')  
         
+        plot([0 120], [mRMSE2(end,n,f) mRMSE2(end,n,f)], '--', 'linewidth',1.5, 'color', colors(2,:),'HandleVisibility','off')  
         plot(real_snr(:,n,f), mRMSE2(:,n,f),'.-','markersize',15, 'color', colors(2,:))
-        plot([0 120], [mRMSE2(end,n,f) mRMSE2(end,n,f)], '--', 'color', colors(2,:),'HandleVisibility','off')  
         
+        plot([0 120], [mRMSE3(end,n,f) mRMSE3(end,n,f)], '--', 'linewidth',1.5, 'color', colors(3,:),'HandleVisibility','off')  
         plot(real_snr(:,n,f), mRMSE3(:,n,f), '.-','markersize',15, 'color', colors(3,:))
-        plot([0 120], [mRMSE3(end,n,f) mRMSE3(end,n,f)], '--', 'color', colors(3,:),'HandleVisibility','off')  
         
+        plot([0 120], [mRMSE4(end,n,f) mRMSE4(end,n,f)], '--', 'linewidth',1.5, 'color', colors(4,:),'HandleVisibility','off')  
         plot(real_snr(:,n,f), mRMSE4(:,n,f),'.-','markersize',15, 'color', colors(4,:))
-        plot([0 120], [mRMSE4(end,n,f) mRMSE4(end,n,f)], '--', 'color', colors(4,:),'HandleVisibility','off')  
         
+        plot([0 120], [mRMSE5(end,n,f) mRMSE5(end,n,f)], '--', 'linewidth',1.5, 'color', colors(5,:),'HandleVisibility','off')  
         plot(real_snr(:,n,f), mRMSE5(:,n,f), '.-','markersize',15, 'color', colors(5,:))
-        plot([0 120], [mRMSE5(end,n,f) mRMSE5(end,n,f)], '--', 'color', colors(5,:),'HandleVisibility','off')  
-                
+         
         if f == 1
             ylabel([num2str(nb_param(n)) ' parameters \newline Average RMSE (s)'])
         end

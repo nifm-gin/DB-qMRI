@@ -124,7 +124,7 @@ for n = 1:size(nb_signals,1)
 
             % Perform DBM
             tic;
-            Estim   = AnalyzeMRImages(XtestN,DicoG,'ClassicMRF',[],Ytest(:,1:size(DicoG{1}.Parameters.Par,2)));
+            Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:size(DicoG{1}.Parameters.Par,2)));
             
             t_grid(snr,n,f)         = toc;
             mNRMSE_grid(snr,n,f)    = nanmean(Estim.GridSearch.Errors.Nrmse);
@@ -133,7 +133,7 @@ for n = 1:size(nb_signals,1)
             
             % Perform DBL
             tic;
-            Estim   = AnalyzeMRImages(XtestN,DicoR,'RegressionMRF',Parameters,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+            Estim   = AnalyzeMRImages(XtestN,DicoR,'DBL',Parameters,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
             
             t_gllim(snr,n,f)        = toc;
             mNRMSE_gllim(snr,n,f)   = nanmean(Estim.Regression.Errors.Nrmse);

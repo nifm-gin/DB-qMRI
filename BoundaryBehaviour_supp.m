@@ -111,7 +111,7 @@ Xtrain_grid = [Xtrain_grid; Xnew];
 % GLLiM learning
 Dic{1}.MRSignals       = AddNoise(Xtrain, snr_train);
 Dic{1}.Parameters.Par  = Ytrain;
-[~,Parameters]  = AnalyzeMRImages([],Dic,'RegressionMRF',Parameters);
+[~,Parameters]  = AnalyzeMRImages([],Dic,'DBL',Parameters);
 
 % Estimation
 intt_   = intt(1):(intt(end) - intt(1))/N:intt(2);
@@ -141,7 +141,7 @@ for s1 = floor(lw/2)+1:length(intt_)-floor(lw/2)
         Xtest_  = AddNoise(Xtest, snr);
 
         % Compute estimates
-        Estim   = AnalyzeMRImages(Xtest_, [], 'RegressionMRF', Parameters); 
+        Estim   = AnalyzeMRImages(Xtest_, [], 'DBL', Parameters); 
         Ygllim  = Estim.Regression.Y(:,1:nb_param);
         [Rmse_gllim(s1,s2,:),~, Mae_gllim(s1,s2,:)] = EvaluateEstimation(Ytest, Ygllim);
 

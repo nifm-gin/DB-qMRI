@@ -34,7 +34,7 @@ nb_repetition = 500;
 snr  	= inf;
 
 % Method settings
-methods = {'ClassicMRF', 'RegressionMRF'};
+methods = {'DBM', 'DBL'};
 Parameters = [];
 Parameters.K = 50;
 Parameters.cstr.Sigma  = 'd*';
@@ -117,9 +117,9 @@ for exp = 1:length(signals) % for all experiments
             Dico{1}.Parameters.Par = Y;
 
             % Compute estimates
-            if any(contains(methods,'ClassicMRF'))
+            if any(contains(methods,'DBM'))
                 tic;
-                Estim 	= AnalyzeMRImages(Xtest,Dico,'ClassicMRF',[],Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
+                Estim 	= AnalyzeMRImages(Xtest,Dico,'DBM',[],Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
 
                 t_DBM(s,rep)        = toc;
                 mRMSE_DBM(s,rep)	= mean(Estim.GridSearch.Errors.Rmse);
@@ -128,11 +128,11 @@ for exp = 1:length(signals) % for all experiments
                 mNMAE_DBM(s,rep)    = mean(Estim.GridSearch.Errors.Nmae);
             end
             
-            if any(contains(methods,'RegressionMRF'))
+            if any(contains(methods,'DBL'))
                 Dico{1}.MRSignals = AddNoise(Dico{1}.MRSignals, snr_train);
 
                 tic;
-                Estim 	= AnalyzeMRImages(Xtest,Dico,'RegressionMRF',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
+                Estim 	= AnalyzeMRImages(Xtest,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
 
                 t_DBL(s,rep)        =  toc;
                 mRMSE_DBL(s,rep)    = mean(Estim.Regression.Errors.Rmse);

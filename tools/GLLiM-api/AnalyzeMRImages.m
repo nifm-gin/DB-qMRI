@@ -1,7 +1,7 @@
 function [Estimation, Parameters] = AnalyzeMRImages(Sequences,Dico,Method,Parameters,References,Outliers)
 
 if nargin < 3, error('Not enought input arguments'); end
-if ~exist('Method','var'),      Method = 'RegressionMRF'; end
+if ~exist('Method','var'),      Method = 'DBL'; end
 if ~exist('Parameters','var'),  Parameters = []; end
 if ~exist('References','var'),  References = []; end
 if ~exist('Outliers','var'),    Outliers = []; end
@@ -9,10 +9,18 @@ if ~exist('Outliers','var'),    Outliers = []; end
 % This parameters is only used to enable the parameter data normalisation
 normalization = 1;
 
-if isempty(Sequences),	Sequences = Dico{1}.MRSignals; end
+%This line is only required to stay compatible with old notation 
+switch Method
+    case 'ClassicMRF'
+        Method = 'DBM';
+    case 'RegressionMRF'
+        Method = 'DBL';
+end
+
+if isempty(Sequences), Sequences = Dico{1}.MRSignals; end
 % Can be a problem, remove following line if necessary - 20/02/2019
 if isempty(Parameters),	Parameters = struct(); end 
-
+if isstruct(Dico), Dico = {Dico}; end
 
 switch length(size(Sequences))
     case 4
@@ -36,7 +44,7 @@ end
 f = 1;
 switch Method
     
-    case 'ClassicMRF'
+    case 'DBM'
         for s = 1:slices
             %Estimation of parameters
             Estimation.GridSearch.Y(:,:,:,s) = ...
@@ -49,7 +57,7 @@ switch Method
             end
         end
         
-    case 'RegressionMRF'
+    case 'DBL'
         
         if ~any(strcmp(fieldnames(Parameters),'theta'))
             
