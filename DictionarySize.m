@@ -19,7 +19,6 @@ backup  = 1;
 int     = [0 1];
 p       = [.01 .01];
 while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
-%p       = 0.12:0.12:1;
 nb_param = [3 4 5 6 7];
 nb_signals = 3:6;
 nb_signals = repmat(nb_signals,length(nb_param),1);
@@ -237,12 +236,14 @@ end
 
 linkaxes(ax(1:2), 'xy')
 linkaxes(ax(3:4), 'xy')
+% set(ax,'XScale','log')
 
 
 %% Supplementary figure
 
 fig_supp = figure;
 
+ccount = 1;
 for n = 1:size(nb_signals,1)
     
     count = 1;
@@ -250,7 +251,8 @@ for n = 1:size(nb_signals,1)
         
         if nb_signals(n,f) >= 100 % If we have at least 100 signals 
             
-            ax = subplot(size(nb_signals,1),size(nb_signals,2), size(nb_signals,2) *(n-1) + f);
+            ax(ccount) = subplot(size(nb_signals,1),size(nb_signals,2), size(nb_signals,2) *(n-1) + f);
+            ccount= ccount +1;
             set(groot,'defaultAxesColorOrder',colors)
             
             hold on;
@@ -277,6 +279,7 @@ for n = 1:size(nb_signals,1)
         if n == size(nb_signals,1), xlabel('SNR'); end
     end
 end
+% set(ax,'XScale','log')
 
 
 %% Exporting figures

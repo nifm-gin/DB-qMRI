@@ -30,7 +30,7 @@ signals = [216  1000 4096 ... %6^3 10^3 16^3
 
 % Experiment settings
 nb_test_signals = 1000;
-nb_repetition = 30;
+nb_repetition = 500;
 snr  	= inf;
 
 % Method settings
@@ -315,10 +315,8 @@ linkaxes(h(1), 'y')
 % ylim(h(1),[0.0 0.1])
 linkaxes(h(2:3), 'y')
 % ylim(h(2:3),[0.01 0.11])
-
 linkaxes(h(4:6), 'y')
 % ylim(h(4:6),[0.0 0.1])
-
 linkaxes(h(7:8), 'y')
 % ylim(h(7:8),[0.0 0.1])
 
