@@ -36,7 +36,7 @@ Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
-snr_train = inf;
+snr_train = 60;
 
 fast_limit = 500;
 
@@ -190,53 +190,49 @@ for nb_param_wted = nb_param_wted_v
     set(groot,'defaultAxesColorOrder',colors)
     hold on
     
-    for f = 1:size(nb_signals,2)
-        pp(f) = plot(real_snr(:,nb_param_wted_,f), mRMSE(:,1,nb_param_wted_,f), '.-', 'MarkerSize', 25, 'Color', colors(f,:));        
-        plot([0 200], [mRMSE(end,1,nb_param_wted_,f) mRMSE(end,1,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:))        
+    for f = 1:size(nb_signals,2) 
+        plot([0 200], [mRMSE(end,1,nb_param_wted_,f) mRMSE(end,1,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:))     
+        pp(f) = plot(real_snr(:,nb_param_wted_,f), mRMSE(:,1,nb_param_wted_,f), '.-', 'MarkerSize', 18, 'Color', colors(f,:));          
         
         axis tight;
         
-        ylim([.001 .25]);
+        ylim([0 .25]);
         xlim([11 105])
     end
     set(gca,'FontSize',16)
     switch count
         case 1
-            title('(a)');
+            title('DBM \newline (a)');
         case 3
             title('(c)');           
     end
     if count > 2, xlabel('SNR'); end
-    ylabel('Average RMSE (s)')
+    ylabel([num2str(nb_param_wted) ' parameters\newline Average RMSE (s)'])
     
     ax(count+1) = subplot(2,2,count+1);
     hold on
-    for f = 1:size(nb_signals,2)   
-        pp(f) = plot(real_snr(:,nb_param_wted_,f), mRMSE(:,2,nb_param_wted_,f), '.-', 'MarkerSize', 25, 'Color',colors(f,:));
-        plot([0 200], [mRMSE(end,2,nb_param_wted_,f) mRMSE(end,2,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:))        
+    for f = 1:size(nb_signals,2)
+        plot([0 200], [mRMSE(end,2,nb_param_wted_,f) mRMSE(end,2,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:),'HandleVisibility','off')        
+        pp(f) = plot(real_snr(:,nb_param_wted_,f), mRMSE(:,2,nb_param_wted_,f), '.-', 'MarkerSize', 18, 'Color',colors(f,:));
         
-        legds{f}   = [num2str(nb_signals(nb_param_wted_,f)) '-signal dictionary'];
-
         axis tight;
-        
-        ylim([.001 .25]);
+        ylim([0 .25]);
         xlim([11 105])
     end
     
     if count > 2, xlabel('SNR'); end
-    
     switch count
         case 1
-            title('(b)');
+            title('DBL \newline (b)');
         case 3
             title('(d)');           
     end
-    
     count = 3;
     
     set(gca,'FontSize',16)
-    %lgd = legend(pp, legds);
     lgd.FontSize = 16;
+    
+    legend([num2str(nb_signals(nb_param_wted_,:)') repelem('-signal dictionary',length(nb_signals(nb_param_wted_,:)),1)])
 end
 
 linkaxes(ax(1:2), 'xy')
@@ -258,14 +254,19 @@ for n = 1:size(nb_signals,1)
             set(groot,'defaultAxesColorOrder',colors)
             
             hold on;
-            plot(real_snr(:,n,f), mRMSE(:,1,n,f), '.-', 'MarkerSize', 12)
-            plot(real_snr(:,n,f), mRMSE(:,2,n,f), '.-', 'MarkerSize', 12)
+            plot([0 200], [mRMSE(end,1,n,f) mRMSE(end,1,n,f)], '--', 'linewidth',1.5, 'Color',colors(1,:),'HandleVisibility','off')        
+            plot([0 200], [mRMSE(end,2,n,f) mRMSE(end,2,n,f)], '--', 'linewidth',1.5, 'Color',colors(2,:),'HandleVisibility','off')        
+        
+            plot(real_snr(:,n,f), mRMSE(:,1,n,f), '.-', 'MarkerSize', 12, 'Color', colors(1,:))
+            plot(real_snr(:,n,f), mRMSE(:,2,n,f), '.-', 'MarkerSize', 12, 'Color', colors(2,:))
+            
             axis tight;
 
             if f ==  size(nb_signals,2) && n == 1, legend('DBM','DBL'); end
             title([num2str(nb_signals(n,f)) ' signals']);
-            if count == 1, ylabel([num2str(nb_param(n)) ' parameters'], 'fontweight','bold'); end
-            ylim([0 .15]);
+            if count == 1, ylabel([num2str(nb_param(n)) ' parameters \newline Average RMSE (s)']); end
+            ylim([0 .21]);
+            xlim([11 105])
 
             set(gca,'FontSize',12)
             lgd.FontSize = 16;
@@ -273,7 +274,6 @@ for n = 1:size(nb_signals,1)
             count = count +1;
         end
         
-        if count >= 3, ylabel('Average RMSE'); end
         if n == size(nb_signals,1), xlabel('SNR'); end
     end
 end

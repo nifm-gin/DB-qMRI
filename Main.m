@@ -1,9 +1,9 @@
 
 %% Description
 %
-% The aim of this script is to run all the others and to produce all
-% numerical experiments that allows to illustrate the interest of the
-% dictionary-based learning (DBL) method.
+% The aim of this script is to run all the others and to produce
+% numerical experiment results that allows to illustrate the interest of
+% the dictionary-based learning (DBL) method.
 %
 % Fabien Boux - 01/2020
 
@@ -13,9 +13,13 @@
 % Figures are saved in the ./figures folder 
 close_figure = 1;
 
+% Specify the number of workers for parallelization
+nb_workers = 20;
+parpool(nb_workers)
+
 
 %% Effect of parameter space sampling
-% Produce 3 figures:
+% Producing 3 figures:
 %   - ParameterSpaceSampling-illustration.fig illustrates
 %       2-dimensional projections of 3-dimensional samples obtained from 3
 %       different sampling strategies (grid, random and quasi-random)
@@ -25,7 +29,8 @@ close_figure = 1;
 %       applying the DBL method
 %
 %   - ParameterSpaceSampling-supp.fig
-%       More experiments and average RMSE for both the DBM and DBL methods
+%       More experiments and average RMSE is computed for both the DBM and
+%       DBL methods
 
 clear 
 ParameterSpaceSampling
@@ -53,7 +58,8 @@ if close_figure == 1, close all; end
 %       and the DBL methods on dictionary smaller than this space.
 %
 %   - BoundaryBehaviour-supp.fig 
-%       Same experiment with few signals added in the dictionary
+%       Same experiment with few randomly picked signals added in the 
+%       dictionary
 
 clear 
 BoundaryBehaviour

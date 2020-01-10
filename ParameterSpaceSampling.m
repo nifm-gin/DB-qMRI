@@ -29,9 +29,8 @@ signals = [216  1000 4096 ... %6^3 10^3 16^3
            2187 16384];       %3^7 4^7 
 
 % Experiment settings
-
 nb_test_signals = 1000;
-nb_repetition = 1000;
+nb_repetition = 30;
 snr  	= inf;
 
 % Method settings
@@ -174,16 +173,19 @@ DBM_rmse = struct([]);
 DBL_rmse = struct([]);
 
 for i = 1:length(signals)
-    filename = ['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(param(exp)) '-' num2str(signals(exp)) '.mat'];
+    filename = ['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(param(i)) '-' num2str(signals(i)) '.mat'];
     
     if exist(filename,'file')
-        load(filename,'mRMSE_DBM','mRMSE_DBL');
+        load(filename,'mRMSE_DBM','mRMSE_DBL','nb_param','nb_train_signals');
         DBM_rmse{i} = mRMSE_DBM;
         DBL_rmse{i} = mRMSE_DBL;
     else
         DBM_rmse{i} = [];
         DBL_rmse{i} = [];
     end
+    
+    title_nb_param(i) = nb_param;
+    title_nb_signals(i) = nb_train_signals;
 end
 
 
@@ -207,8 +209,10 @@ for i = [1 4 7]
     xtickangle(45)
     set(gca, 'fontsize',15, 'XTickLabels',{'Grid','Rand','QRand'})
     
-    title(titles{c})
+    title([titles{c} ' ' num2str(title_nb_param(i)) ' parameters'])
 end
+
+linkaxes(h,'y')
 
 
 %% supplementary figure
@@ -224,7 +228,7 @@ for i = 1:length(DBL_rmse)
     
     boxplot(dat,'symbol','','OutlierSize',1)
     if i == 1 || i == 4 || i == 7
-        ylabel('Average RMSE (s)')
+        ylabel([num2str(title_nb_param(i)) ' parameters \newline Average RMSE (s)'])
     else
         ylabel(' ')
     end
@@ -249,14 +253,14 @@ for i = 1:length(DBL_rmse)
     count = 0;
     boxplot(dat,'symbol','','OutlierSize',1)
     if i == 1 || i == 4 || i == 7
-        ylabel('Average RMSE (s)')
+        ylabel([num2str(title_nb_param(i)) ' parameters \newline Average RMSE (s)'])
     else
         ylabel(' ')
     end
     xtickangle(45)
     set(gca,'linew',1.5, 'fontsize',15, 'XTickLabels',{'Grid','Rand','QRand'})
     
-    title(titles{i})
+    title([titles{c} ' ' num2str(title_nb_signals(i)) ' signals'])
     set(findobj(gca,'type','line'),'linew',1.5)
     xtickangle(45)
     pause(.2)
@@ -296,27 +300,27 @@ for i = 1:length(DBL_rmse)
 %     end
 %     hold off
     
-    if i == 1
-        ylim([0 0.2])
-    elseif i == 2 || i == 3
-        ylim([0.01 0.11])
-    elseif i == 4 || i == 5 || i == 6
-        ylim([0.03 0.16])
-    elseif i > 6
-        ylim([0.05 0.2])
-    end
+%     if i == 1
+%         ylim([0 0.2])
+%     elseif i == 2 || i == 3
+%         ylim([0.01 0.11])
+%     elseif i == 4 || i == 5 || i == 6
+%         ylim([0.03 0.16])
+%     elseif i > 6
+%         ylim([0.05 0.2])
+%     end
 end
 
 linkaxes(h(1), 'y')
-ylim(h(1),[0.0 0.1])
+% ylim(h(1),[0.0 0.1])
 linkaxes(h(2:3), 'y')
-ylim(h(2:3),[0.01 0.11])
+% ylim(h(2:3),[0.01 0.11])
 
 linkaxes(h(4:6), 'y')
-ylim(h(4:6),[0.0 0.1])
+% ylim(h(4:6),[0.0 0.1])
 
 linkaxes(h(7:8), 'y')
-ylim(h(7:8),[0.0 0.1])
+% ylim(h(7:8),[0.0 0.1])
 
 
 %% Sampling strategies illustration
