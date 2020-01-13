@@ -18,7 +18,7 @@ int   	= [0 1];
 p       = [.01 .01];
 while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
 nb_param = [3 5 7];
-nb_signals = 3:5;
+nb_signals = 4:5;
 nb_signals = repmat(nb_signals,length(nb_param),1);
 for i = 1:length(nb_param), nb_signals(i,:) = nb_signals(i,:).^nb_param(i); end
 
@@ -33,6 +33,13 @@ Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
+
+
+%% Creating data
+
+% Adding to path
+addpath(genpath('functions'))
+addpath(genpath('tools'))
 
 
 %% Processing
