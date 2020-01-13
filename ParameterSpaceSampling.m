@@ -23,7 +23,7 @@ while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
 
 param   = [3 3 3 ...
            5 5 5 ...
-           7];
+           7 7];
 signals = [512    1728   4096 ... %8^3 12^3 16^3
            1024   3125   7776 ... %4^5 5^5 6^5
            2187  16384];         %3^7 4^7 
@@ -66,108 +66,112 @@ for exp = 1:length(signals) % for all experiments
         
     if verbose >= 1, disp([num2str(nb_param) ' - ' num2str(nb_train_signals)]); end
     
-    mRMSE_DBM   = nan(3, nb_repetition);
-    mMAE_DBM    = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
-    mRMSE_DBL   = mRMSE_DBM;
-    mMAE_DBL    = mRMSE_DBM; mNRMSE_DBL = mRMSE_DBM; mNMAE_DBL = mRMSE_DBM;
-    sizes       = nan(3,nb_repetition);
-    
-    parfor rep = 1:nb_repetition
-
-        if verbose == 2, disp([num2str(rep) '/' num2str(nb_repetition)]); end
-
-        % Generate test data
-        Ytest   = int(1) + (int(2) - int(1)) * rand(nb_test_signals,nb_param);
-        Xtest   = [];
-        for sim = 1:size(Ytest,1)
-            Xtest(sim,:) = toyMRsignal(Ytest(sim,:), p(1:nb_param));
-        end
-        Xtest   = AddNoise(Xtest, snr_test);
-        
-        for s = 1:3 %for the 3 sampling strategies
-
-            X = []; Y = [];
-            switch s 
-                % Generate dico grid
-                case 1 
-                    step    = (int(2)-int(1)) / (nb_train_signals^(1/nb_param));
-                    v       = int(1)+step/2:step:int(2)-step/2;
-                    Y       = arrangement(v,nb_param);
-                    for sim = 1:size(Y,1)
-                        X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
-                    end
-                    if nb_train_signals ~= length(Y), warning('Not enought signals in grid'); end
-                    
-                % Generate random uniform dico    
-                case 2 
-                    Y       = int(1) + (int(2) - int(1)) * rand(nb_train_signals,nb_param);
-                    for sim = 1:size(Y,1)
-                        X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
-                    end
-
-                % Generate quasi-random dico
-                case 3 
-                    Y       = int(1) + (int(2) - int(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb_train_signals);
-                    for sim = 1:size(Y,1)
-                        X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
-                    end
-            end
-            
-            sizes(s,rep) = size(Y,1);
-
-            % Prepare dico
-            Dico = [];
-            Dico{1}.MRSignals = abs(X); 
-            Dico{1}.Parameters.Par = Y;
-
-            % Compute estimates
-            if any(contains(methods,'DBM'))
-                tic;
-                Estim 	= AnalyzeMRImages(Xtest,Dico,'DBM',[],Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
-
-                t_DBM(s,rep)        = toc;
-                mRMSE_DBM(s,rep)	= mean(Estim.GridSearch.Errors.Rmse);
-                mMAE_DBM(s,rep)     = mean(Estim.GridSearch.Errors.Mae);
-                mNRMSE_DBM(s,rep)   = mean(Estim.GridSearch.Errors.Nrmse);
-                mNMAE_DBM(s,rep)    = mean(Estim.GridSearch.Errors.Nmae);
-            end
-            
-            if any(contains(methods,'DBL'))
-                Dico{1}.MRSignals = AddNoise(Dico{1}.MRSignals, snr_train);
-
-                tic;
-                Estim 	= AnalyzeMRImages(Xtest,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
-
-                t_DBL(s,rep)        = toc;
-                mRMSE_DBL(s,rep)    = mean(Estim.Regression.Errors.Rmse);
-                mMAE_DBL(s,rep)     = mean(Estim.Regression.Errors.Mae);
-                mNRMSE_DBL(s,rep)   = mean(Estim.Regression.Errors.Nrmse);
-                mNMAE_DBL(s,rep)    = mean(Estim.Regression.Errors.Nmae);
-            end
-        end   
-    end
-
-    % Save results
-    clear *tmp* Dico X* Y* Estim
     if ~exist(['temp/ParameterSpaceSampling/' num2str(Id)],'dir')
         mkdir(['temp/ParameterSpaceSampling/' num2str(Id)])
     end
-    save(['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(nb_param) '-' num2str(nb_train_signals) '.mat'])
+    
+    if ~exist(['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(nb_param) '-' num2str(nb_train_signals) '.mat'], 'file')
+        
+        mRMSE_DBM   = nan(3, nb_repetition);
+        mMAE_DBM    = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
+        mRMSE_DBL   = mRMSE_DBM;
+        mMAE_DBL    = mRMSE_DBM; mNRMSE_DBL = mRMSE_DBM; mNMAE_DBL = mRMSE_DBM;
+        sizes       = nan(3,nb_repetition);
 
-    % % Display histogram of errors
-    % fig = figure;
-    % 
-    % subplot(121)
-    % hist(mRMSE',0:0.0005:0.08)
-    % xlabel('Average RMSE (s) (seconds)'); ylabel('Histogram')
-    % legend({'Regular grid', 'Random uniform sampling', 'Quasi random sampling'})
-    % xlim([.005 .08]) 
-    % 
-    % subplot(122)
-    % hist(mMAE',0:0.0005:0.08)
-    % xlabel('Mean MAE (seconds)'); ylabel('Histogram')
-    % legend({'Regular grid', 'Random uniform sampling', 'Quasi random sampling'})
-    % xlim([.005 .08])
+        parfor rep = 1:nb_repetition
+
+            if verbose == 2, disp([num2str(rep) '/' num2str(nb_repetition)]); end
+
+            % Generate test data
+            Ytest   = int(1) + (int(2) - int(1)) * rand(nb_test_signals,nb_param);
+            Xtest   = [];
+            for sim = 1:size(Ytest,1)
+                Xtest(sim,:) = toyMRsignal(Ytest(sim,:), p(1:nb_param));
+            end
+            Xtest   = AddNoise(Xtest, snr_test);
+
+            for s = 1:3 %for the 3 sampling strategies
+
+                X = []; Y = [];
+                switch s 
+                    % Generate dico grid
+                    case 1 
+                        step    = (int(2)-int(1)) / (nb_train_signals^(1/nb_param));
+                        v       = int(1)+step/2:step:int(2)-step/2;
+                        Y       = arrangement(v,nb_param);
+                        for sim = 1:size(Y,1)
+                            X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
+                        end
+                        if nb_train_signals ~= length(Y), warning('Not enought signals in grid'); end
+
+                    % Generate random uniform dico    
+                    case 2 
+                        Y       = int(1) + (int(2) - int(1)) * rand(nb_train_signals,nb_param);
+                        for sim = 1:size(Y,1)
+                            X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
+                        end
+
+                    % Generate quasi-random dico
+                    case 3 
+                        Y       = int(1) + (int(2) - int(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb_train_signals);
+                        for sim = 1:size(Y,1)
+                            X(sim,:) = toyMRsignal(Y(sim,:), p(1:nb_param));
+                        end
+                end
+
+                sizes(s,rep) = size(Y,1);
+
+                % Prepare dico
+                Dico = [];
+                Dico{1}.MRSignals = abs(X); 
+                Dico{1}.Parameters.Par = Y;
+
+                % Compute estimates
+                if any(contains(methods,'DBM'))
+                    tic;
+                    Estim 	= AnalyzeMRImages(Xtest,Dico,'DBM',[],Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
+
+                    t_DBM(s,rep)        = toc;
+                    mRMSE_DBM(s,rep)	= mean(Estim.GridSearch.Errors.Rmse);
+                    mMAE_DBM(s,rep)     = mean(Estim.GridSearch.Errors.Mae);
+                    mNRMSE_DBM(s,rep)   = mean(Estim.GridSearch.Errors.Nrmse);
+                    mNMAE_DBM(s,rep)    = mean(Estim.GridSearch.Errors.Nmae);
+                end
+
+                if any(contains(methods,'DBL'))
+                    Dico{1}.MRSignals = AddNoise(Dico{1}.MRSignals, snr_train);
+
+                    tic;
+                    Estim 	= AnalyzeMRImages(Xtest,Dico,'DBL',Parameters,Ytest(:,1:size(Dico{1}.Parameters.Par,2)));
+
+                    t_DBL(s,rep)        = toc;
+                    mRMSE_DBL(s,rep)    = mean(Estim.Regression.Errors.Rmse);
+                    mMAE_DBL(s,rep)     = mean(Estim.Regression.Errors.Mae);
+                    mNRMSE_DBL(s,rep)   = mean(Estim.Regression.Errors.Nrmse);
+                    mNMAE_DBL(s,rep)    = mean(Estim.Regression.Errors.Nmae);
+                end
+            end   
+        end
+
+        % Save results
+        clear *tmp* Dico X* Y* Estim
+        save(['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(nb_param) '-' num2str(nb_train_signals) '.mat'])
+
+        % % Display histogram of errors
+        % fig = figure;
+        % 
+        % subplot(121)
+        % hist(mRMSE',0:0.0005:0.08)
+        % xlabel('Average RMSE (s) (seconds)'); ylabel('Histogram')
+        % legend({'Regular grid', 'Random uniform sampling', 'Quasi random sampling'})
+        % xlim([.005 .08]) 
+        % 
+        % subplot(122)
+        % hist(mMAE',0:0.0005:0.08)
+        % xlabel('Mean MAE (seconds)'); ylabel('Histogram')
+        % legend({'Regular grid', 'Random uniform sampling', 'Quasi random sampling'})
+        % xlim([.005 .08])
+    end
 end
 
    
