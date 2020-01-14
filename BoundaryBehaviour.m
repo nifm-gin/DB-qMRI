@@ -141,7 +141,7 @@ end
 %% Saving 
 
 if backup == 1
-    clear tmp* Xtrain* Ytrain* Dic s1
+    clear tmp* X* Y* Dic
     save(['temp/' 'BoundaryBehaviour'])
 end
 

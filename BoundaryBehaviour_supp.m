@@ -97,13 +97,13 @@ end
 
 % Add some values out of the training space
 i       = i+1;
-Ynew    = int_all{i}{1}(1) + (int_all{i}{1}(2) - int_all{i}{1}(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb);
-Xnew    = [];
-for sim = 1:size(Ynew,1), Xnew(sim,:) = toyMRsignal(Ynew(sim,:), p); end
-Ytrain      = [Ytrain; Ynew];
-Xtrain      = [Xtrain; Xnew];
-Ytrain_grid = [Ytrain_grid; Ynew];
-Xtrain_grid = [Xtrain_grid; Xnew];
+newY    = int_all{i}{1}(1) + (int_all{i}{1}(2) - int_all{i}{1}(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb);
+newX    = [];
+for sim = 1:size(newY,1), newX(sim,:) = toyMRsignal(newY(sim,:), p); end
+Ytrain      = [Ytrain; newY];
+Xtrain      = [Xtrain; newX];
+Ytrain_grid = [Ytrain_grid; newY];
+Xtrain_grid = [Xtrain_grid; newX];
 
 
 %% Processing 
@@ -154,7 +154,7 @@ end
 %% Saving 
 
 if backup == 1
-    clear tmp* Xtrain* Ytrain* Dic s1
+    clear tmp* X* Y* Dic
     save(['temp/' 'BoundaryBehaviour-supp'])
 end
 
@@ -168,7 +168,7 @@ ttt     = split(num2str(intt_(v),1), ' ');
 ttt     = ttt(~cellfun('isempty',ttt));
 
 err     = Rmse_gllim;
-bounds = [0 .3];
+bounds  = [0 .3];
 
 h(nb_int-1) = subplot(2,length(int_all)-1,nb_int-1);
 
@@ -180,7 +180,7 @@ for i = 1:length(int)
     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
 end
-plot(Ynew(:,2),Ynew(:,1), 'wx', 'markersize', 12)    
+plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12)    
 colormap(mycmap()); colorbar
 xlabel('Second parameter'); ylabel('First parameter')
 xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
@@ -205,7 +205,7 @@ for i = 1:length(int)
     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
 end
-plot(Ynew(:,2),Ynew(:,1), 'wx', 'markersize', 12)    
+plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12)    
 colormap(mycmap()); colorbar
 xlabel('Second parameter'); ylabel('First parameter')
 xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])

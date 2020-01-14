@@ -157,7 +157,7 @@ mMAE(:,2,:,:)   = mMAE_gllim;
 %% Saving 
 
 if backup == 1
-    clear tmp* Dico* Estim
+    clear tmp* Dico* Estim X* Y*
     save(['temp/' 'DictionarySize'])
 end
 

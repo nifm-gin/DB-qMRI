@@ -159,11 +159,13 @@ mRMSE(:,2,:,:)  = mRMSE_gllim;
 mMAE(:,1,:,:)   = mMAE_grid;
 mMAE(:,2,:,:)   = mMAE_gllim;
 
+fing_signals = X(randi(size(X,1),10,1),:);
+
 
 %% Saving 
 
 if backup == 1
-    clear tmp* D Dico* Y* Estim
+    clear tmp* D Dico* X* Y*
     save(['temp/' 'bSSFPfingerprints'])
 end
 
@@ -192,7 +194,7 @@ xlabel('TR index'); ylabel('TR (ms)')
 ylim([10 14]); xlim([0 length(TR)])
 
 subplot(2,2,[2 4])
-plot(X(randi(size(X,1),10,1),:)')
+plot(fing_signals')
 ylim([0 .2]); xlim([0 length(TR)])
 
 
