@@ -17,7 +17,7 @@ The information about figures is given as comments in the file `Main.m` script.
 
 The `./tools` folder contains the [GLLiM regression](https://team.inria.fr/perception/gllim_toolbox/) of Antoine Deleforge and our adaptation in the MRI context that can be run using:
 ```matlab
->> [Estimation, Parameters] = AnalyzeMRImages(Sequences,Dico,Method)
+>> [Estimation, Parameters] = AnalyzeMRImages(Sequences, Dico, Method)
 ```
 where ```Sequences``` is a 3D or 4D matrix of observed MR signals (the third dimension is the time, others are spatial dimensions), ```Dico``` is a structure that represents the dictionary and ```Method``` is the strings ```'DBM'``` or ```'DBL'``` that calls the method. The fields of ```Dico``` are ```Dico.MRSignals``` that is a 2D matrix of MR signals (second dimension is time) and ```Dico.Parameters.Par``` is a 2D matrix of parameters that match to the corresponding MR signals (second dimension is the parameter dimension). Then, note that first dimensions of ```Dico.MRSignals``` and ```Dico.Parameters.Par``` must be equals.
 
