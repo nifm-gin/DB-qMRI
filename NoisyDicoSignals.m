@@ -14,7 +14,7 @@ verbose = 1;
 backup  = 1;
 
 % Signal settings
-int   	= [0 1];
+int   	= [0.01 1];
 p       = [.01 .01];
 while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
 nb_param = [3 5 7];
@@ -44,11 +44,12 @@ addpath(genpath('tools'))
 
 %% Processing
 
-mNRMSE1 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2)); mRMSE1 = mNRMSE1; mMAE1 = mNRMSE1;
-mNRMSE2 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2)); mRMSE2 = mNRMSE1; mMAE2 = mNRMSE1;
-mNRMSE3 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2)); mRMSE3 = mNRMSE1; mMAE3 = mNRMSE1;
-mNRMSE4 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2)); mRMSE4 = mNRMSE1; mMAE4 = mNRMSE1;
-mNRMSE5 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2)); mRMSE5 = mNRMSE1; mMAE5 = mNRMSE1;
+mNRMSE1 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2));
+                   mRMSE1 = mNRMSE1; mMAE1 = mNRMSE1;
+mNRMSE2 = mNRMSE1; mRMSE2 = mNRMSE1; mMAE2 = mNRMSE1;
+mNRMSE3 = mNRMSE1; mRMSE3 = mNRMSE1; mMAE3 = mNRMSE1;
+mNRMSE4 = mNRMSE1; mRMSE4 = mNRMSE1; mMAE4 = mNRMSE1;
+mNRMSE5 = mNRMSE1; mRMSE5 = mNRMSE1; mMAE5 = mNRMSE1;
 
 for n = 1:size(nb_signals,1)
     

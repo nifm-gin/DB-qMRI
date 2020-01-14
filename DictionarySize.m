@@ -16,7 +16,7 @@ verbose = 1; %0, 1 or 2 for more details
 backup  = 1;
 
 % Signal settings
-int     = [0 1];
+int     = [.01 1]; %TODO [.1 1] ?
 p       = [.01 .01];
 while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
 nb_param = [3 4 5 6 7];
@@ -25,7 +25,7 @@ nb_signals = repmat(nb_signals,length(nb_param),1);
 for i = 1:length(nb_param), nb_signals(i,:) = nb_signals(i,:).^nb_param(i); end
 
 % Experiment settings
-snr_levels = [logspace(1, 2.035, 40) inf];
+snr_levels = [logspace(1, 2.035, 39) inf];
 nb_test_signals = 10000;
 
 % Regression settings
@@ -46,8 +46,6 @@ fast_limit = 500;
 addpath(genpath('functions'))
 addpath(genpath('tools'))
 
-% Creating 
-
 
 %% Processing 
 
@@ -66,6 +64,8 @@ for n = 1:size(nb_signals,1)
     for r = 1:nb_param(n), outliers{r} = int; end
 
     for f = 1:size(nb_signals,2)
+        
+        if n == size(nb_signals,1) && f == size(nb_signals,2), break; end
         
         if verbose >= 1, disp([num2str(nb_param(n)) ' - ' num2str(nb_signals(n,f))]); end
         
@@ -109,7 +109,7 @@ for n = 1:size(nb_signals,1)
                 
         parfor snr = 1:length(snr_levels)
 
-            if verbose == 2, disp(['\t (n,f) = (' num2str(n) ',' num2str(f) ')\t Snr order: ' num2str(snr_levels(snr))]); end
+            if verbose == 2, disp(['(n,f) = (' num2str(n) ',' num2str(f) ') - Snr order: ' num2str(snr_levels(snr))]); end
             
             % Generate test data
             Ytest 	= int(1) + (int(2) - int(1)) * rand(nb_test_signals,nb_param(n));

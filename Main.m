@@ -14,23 +14,23 @@
 close_figure = 1;
 
 % Specify the number of workers for parallelization
-nb_workers = 20;
-parpool(nb_workers)
+nb_workers = 16;
+p = parpool(nb_workers);
 
 
 %% Effect of parameter space sampling
 % Producing 3 figures:
 %   - ParameterSpaceSampling-illustration.fig illustrates
 %       2-dimensional projections of 3-dimensional samples obtained from 3
-%       different sampling strategies (grid, random and quasi-random)
+%       different sampling strategies (grid, random and quasi-random).
 %
 %   - ParameterSpaceSampling.fig
 %       Distribution of average RMSE for the different sampling strategies
-%       applying the DBL method
+%       applying the DBL method.
 %
 %   - ParameterSpaceSampling-supp.fig
 %       More experiments and average RMSE is computed for both the DBM and
-%       DBL methods
+%       DBL methods.
 
 clear 
 ParameterSpaceSampling
@@ -41,10 +41,10 @@ if close_figure == 1, close all; end
 % Produce 2 figures: 
 %   - DictionarySize.fig
 %       Average RMSE are given as a function of the SNR for different
-%       dictionary sizes and both the DBM and DBL methods
+%       dictionary sizes and both the DBM and DBL methods.
 %
 %   - DictionarySize-supp.fig 
-%       More experiments
+%       More experiments.
 
 clear 
 DictionarySize
@@ -59,7 +59,7 @@ if close_figure == 1, close all; end
 %
 %   - BoundaryBehaviour-supp.fig 
 %       Same experiment with few randomly picked signals added to the 
-%       dictionary
+%       dictionary.
 
 clear 
 BoundaryBehaviour
@@ -81,7 +81,18 @@ NoisyDicoSignals
 if close_figure == 1, close all; end
 
 
+%% bSSFP fingerprints application
+% Produce 2 figures: 
+%   - bSSFPfingerprints.fig
+%       RMSE on T1 and T2 estimates for both the DBM and the DBL methods.
+%
+%   - bSSFPfingerprints-supp.fig 
+%       Flip angles et repetition times used and some example fingerprints
+%       of the dictionary.
 
+clear 
+bSSFPfingerprints
+if close_figure == 1, close all; end
 
 
 
