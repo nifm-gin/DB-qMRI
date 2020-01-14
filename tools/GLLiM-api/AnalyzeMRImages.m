@@ -45,6 +45,8 @@ f = 1;
 switch Method
     
     case 'DBM'
+        
+        tic
         for s = 1:slices
             %Estimation of parameters
             Estimation.GridSearch.Y(:,:,:,s) = ...
@@ -56,9 +58,11 @@ switch Method
                     EvaluateEstimation(reshape(References(:,:,:,s),s1*s2,size(References,3)), reshape(Estimation.GridSearch.Y(:,:,:,s),s1*s2,size(References,3)));
             end
         end
+        Estimation.GridSearch.quantification_time = toc; 
         
     case 'DBL'
         
+        tic
         if ~any(strcmp(fieldnames(Parameters),'theta'))
             
             %Normalize trainning data
@@ -67,18 +71,11 @@ switch Method
                 Parameters.factors.Ystd     = nanstd(Dico{f}.Parameters.Par);
                 Dico{f}.Parameters.Par      = (Dico{f}.Parameters.Par - Parameters.factors.Ymean) ./ Parameters.factors.Ystd;
                 
-%                 Parameters.factors.Xmean	= nanmean(Dico{f}.MRSignals,1);
-%                 Parameters.factors.Xstd     = nanstd(Dico{f}.MRSignals);
-%                 Dico{f}.MRSignals           = (Dico{f}.MRSignals - Parameters.factors.Xmean) ./ Parameters.factors.Xstd;
-                
                 Parameters.factors.normalization = 1;
             else
                 Parameters.factors.Ymean	= 0;
                 Parameters.factors.Ystd     = 1;
-                
-%                 Parameters.factors.Xmean	= 0;
-%                 Parameters.factors.Xstd     = 1;
-                
+                                
                 Parameters.factors.normalization = 0;
             end
             
@@ -88,13 +85,10 @@ switch Method
             Dico{f}.MRSignals       = [];
             Dico{f}.Parameters.Par  = [];
         end
+        Estimation.Regression.learning_time = toc; 
         
+        tic
         for s = 1:slices
-            
-            %Normalize observations
-%             if any(strcmp(fieldnames(Parameters),'factors')) && normalization == 1
-%                 Sequences(:,:,:,s) = reshape((reshape(Sequences(:,:,:,s),s1*s2,t) - Parameters.factors.Xmean) ./ Parameters.factors.Xstd, s1,s2,[]);
-%             end
             
             %Estimation of parameters
             [Yestim,~,Cov,~,Pik] = ...
@@ -138,6 +132,7 @@ switch Method
                     EvaluateEstimation(reshape(References(:,:,:,s),s1*s2,size(References,3)), reshape(Estimation.Regression.Y(:,:,:,s),s1*s2,size(References,3)));
             end
         end
+        Estimation.Regression.quantification_time = toc;
         
         
 end

@@ -50,9 +50,10 @@ addpath(genpath('tools'))
 %% Processing 
 
 mNRMSE_grid  = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
-mRMSE_grid   = mNRMSE_grid; mMAE_grid = mNRMSE_grid; t_grid = mNRMSE_grid;
+mRMSE_grid   = mNRMSE_grid; mMAE_grid = mNRMSE_grid; 
 mNRMSE_gllim = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
-mRMSE_gllim  = mNRMSE_gllim; mMAE_gllim = mNRMSE_gllim; t_gllim = mNRMSE_gllim;
+mRMSE_gllim  = mNRMSE_gllim; mMAE_gllim = mNRMSE_gllim;
+t_grid = mNRMSE_grid; t_gllim = mNRMSE_gllim; t_gllim_learn = mNRMSE_gllim;
 Steps        = nan(size(nb_signals,1), size(nb_signals,2));
 
 if verbose >= 1, disp('Nber of parameters - Dictionary size'); end
@@ -64,8 +65,6 @@ for n = 1:size(nb_signals,1)
     for r = 1:nb_param(n), outliers{r} = int; end
 
     for f = 1:size(nb_signals,2)
-        
-        if n == size(nb_signals,1) && f == size(nb_signals,2), break; end
         
         if verbose >= 1, disp([num2str(nb_param(n)) ' - ' num2str(nb_signals(n,f))]); end
         
@@ -123,19 +122,18 @@ for n = 1:size(nb_signals,1)
             real_snr(snr,n,f)   = mean(tmp); tmp = [];
 
             % Perform DBM
-            tic;
             Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:size(DicoG{1}.Parameters.Par,2)));
             
-            t_grid(snr,n,f)         = toc;
+            t_grid(snr,n,f)         = Estim.GridSearch.quantification_time;
             mNRMSE_grid(snr,n,f)    = nanmean(Estim.GridSearch.Errors.Nrmse);
             mRMSE_grid(snr,n,f)     = nanmean(Estim.GridSearch.Errors.Rmse);
             mMAE_grid(snr,n,f)      = nanmean(Estim.GridSearch.Errors.Mae);
             
             % Perform DBL
-            tic;
             Estim   = AnalyzeMRImages(XtestN,DicoR,'DBL',Parameters,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
             
-            t_gllim(snr,n,f)        = toc;
+            t_gllim(snr,n,f)        = Estim.Regression.quantification_time;
+            t_gllim_learn(snr,n,f)  = Estim.Regression.learning_time;
             mNRMSE_gllim(snr,n,f)   = nanmean(Estim.Regression.Errors.Nrmse);
             mRMSE_gllim(snr,n,f)    = nanmean(Estim.Regression.Errors.Rmse);
             mMAE_gllim(snr,n,f)     = nanmean(Estim.Regression.Errors.Mae);
@@ -146,6 +144,8 @@ end
 
 t(:,1,:,:)      = t_grid;
 t(:,2,:,:)      = t_gllim;
+t(:,3,:,:)      = t_gllim_learn;
+
 mNRMSE(:,1,:,:) = mNRMSE_grid;
 mNRMSE(:,2,:,:) = mNRMSE_gllim;
 mRMSE(:,1,:,:)  = mRMSE_grid;
