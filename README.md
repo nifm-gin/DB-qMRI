@@ -31,7 +31,7 @@ where ```Sequences``` is a 3D or 4D matrix of observed MR signals (the third dim
 ## External tools
 The `./tools` folder contains external toolboxes located in the subfolder having the same name:
 
- - Antoine Deleforge, the [GLLiM](https://team.inria.fr/perception/gllim_toolbox/) regression and [GLLiM-api] our improvement and adaptation in the MRI context.
+ - Antoine Deleforge, the [GLLiM](https://team.inria.fr/perception/gllim_toolbox/) regression and GLLiM-api our improvement and adaptation in the MRI context.
 
 - Jakob Asslaender, the [NYU_MRF_Recon](https://bitbucket.org/asslaender/nyu_mrf_recon/src/master/) toolbox reconstructs quantitative maps of arbitrary MR Fingerprinting data with arbitrary k-space trajectories. The tool has been modify in order to take into account any sampling during the dictionary generation.
 
