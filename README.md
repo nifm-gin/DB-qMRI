@@ -17,7 +17,7 @@ All figures can be found in the `./figures` folder. To reproduce paper figures, 
 ```matlab
 >> Main
 ```
-The information about figures is given as comments in the file `Main.m` script.
+Information about figures are described (comments) in the `Main.m` file.
 
 The quantification is achieved, running:
 ```matlab
