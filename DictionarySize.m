@@ -46,15 +46,16 @@ fast_limit = 500;
 addpath(genpath('functions'))
 addpath(genpath('tools'))
 
-
-%% Processing 
-
+% Init
 mNRMSE_grid  = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
 mRMSE_grid   = mNRMSE_grid; mMAE_grid = mNRMSE_grid; 
 mNRMSE_gllim = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
 mRMSE_gllim  = mNRMSE_gllim; mMAE_gllim = mNRMSE_gllim;
 t_grid = mNRMSE_grid; t_gllim = mNRMSE_gllim; t_gllim_learn = mNRMSE_gllim;
 Steps        = nan(size(nb_signals,1), size(nb_signals,2));
+
+
+%% Processing 
 
 if verbose >= 1, disp('Nber of parameters - Dictionary size'); end
 
@@ -81,7 +82,7 @@ for n = 1:size(nb_signals,1)
         
         % Save the step size
         Steps(n,f) = step;
-        for sim = 1:size(Y,1)
+        parfor sim = 1:size(Y,1)
             X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param(n)));
         end
         DicoG{1}.MRSignals = abs(X); 
@@ -90,12 +91,13 @@ for n = 1:size(nb_signals,1)
         
         % Compute training dataset
         Y  	= int(1) + (int(2) - int(1)) * net(scramble(sobolset(nb_param(n)),'MatousekAffineOwen'),nb_signals(n,f));
-        for sim = 1:size(Y,1)
+        parfor sim = 1:size(Y,1)
             X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param(n)));
         end
         DicoR{1}.MRSignals = AddNoise(abs(X), snr_train); 
         DicoR{1}.Parameters.Par = Y;
-
+        clear X Y 
+        
         if size(DicoG{1}.MRSignals,1) ~= size(DicoR{1}.MRSignals,1)
             warning('Sizes are not equals')
         end
@@ -105,7 +107,8 @@ for n = 1:size(nb_signals,1)
         else
             Parameters.K = 10;
         end
-                
+        
+        
         parfor snr = 1:length(snr_levels)
 
             if verbose == 2, disp(['(n,f) = (' num2str(n) ',' num2str(f) ') - Snr order: ' num2str(snr_levels(snr))]); end

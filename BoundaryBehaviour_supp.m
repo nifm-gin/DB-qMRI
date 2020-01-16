@@ -97,7 +97,10 @@ end
 
 % Add some values out of the training space
 i       = i+1;
-newY    = int_all{i}{1}(1) + (int_all{i}{1}(2) - int_all{i}{1}(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb);
+% newY    = int_all{i}{1}(1) + (int_all{i}{1}(2) - int_all{i}{1}(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb);
+newY = [0.8534    0.7738
+    1.2500    1.1139
+    0.7376    1.1409];
 newX    = [];
 for sim = 1:size(newY,1), newX(sim,:) = toyMRsignal(newY(sim,:), p); end
 Ytrain      = [Ytrain; newY];

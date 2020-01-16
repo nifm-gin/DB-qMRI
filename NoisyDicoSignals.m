@@ -41,15 +41,16 @@ Parameters.Lw = 0;
 addpath(genpath('functions'))
 addpath(genpath('tools'))
 
-
-%% Processing
-
+% Init
 mNRMSE1 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2));
                    mRMSE1 = mNRMSE1; mMAE1 = mNRMSE1;
 mNRMSE2 = mNRMSE1; mRMSE2 = mNRMSE1; mMAE2 = mNRMSE1;
 mNRMSE3 = mNRMSE1; mRMSE3 = mNRMSE1; mMAE3 = mNRMSE1;
 mNRMSE4 = mNRMSE1; mRMSE4 = mNRMSE1; mMAE4 = mNRMSE1;
 mNRMSE5 = mNRMSE1; mRMSE5 = mNRMSE1; mMAE5 = mNRMSE1;
+
+
+%% Processing
 
 for n = 1:size(nb_signals,1)
     
@@ -64,7 +65,7 @@ for n = 1:size(nb_signals,1)
         % Generate training dataset
         clear X Y
         Y       = int(1) + (int(2) - int(1)) * net(scramble(sobolset(nb_param(n)),'MatousekAffineOwen'),nb_signals(n,f));
-        for sim = 1:size(Y,1)
+        parfor sim = 1:size(Y,1)
             X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param(n)));
         end
         DicoR{1}.MRSignals = abs(X); 
