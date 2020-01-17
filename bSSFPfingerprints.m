@@ -19,18 +19,15 @@ int_T2  = 1e-3 * [20  3020];    % between 20 and 3000 ms
 int_df  = 2*pi * [-400 400];  	% +/- 400 Hz
 
 nb_param = 2;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
-nb_signals = [400 3600]; % if nb_param == 2
+nb_signals = [400 6400]; % if nb_param == 2
 % nb_signals = [1000 8000]; % if nb_param == 3
     
 % Simulation settings
 FA      = (pi/180)* [90 ...
-           10 + 50 *sin((2*pi/500) *(1:250)) + 5*randn(1,250) ...
+           10 + 50 *sin((2*pi/500) *(1:250)) + 2*randn(1,250) ...
            zeros(1,49) ...
-           (10 + 50 *sin((2*pi/500) *(1:200)) + 5*randn(1,200)) /2]; % Flip angles
+           (10 + 50 *sin((2*pi/500) *(1:200)) + 4*randn(1,200)) /2]; % Flip angles
 % TR      = 1e-3 * (10.5  + 3.5 * rand(1,500));    % Uniform between 10.5 and 14 ms
-TR      = perlin(500); TR = TR(1,:);
-TR      = (TR - min(TR)) ./ max(TR - min(TR));
-TR      = 1e-3 * (10.5  + 3.5 * TR);
 
 % Experiment settings
 snr_levels = [logspace(1, 2.035, 39) inf];
@@ -51,6 +48,11 @@ snr_train = 60;
 addpath(genpath('functions'))
 addpath(genpath('tools'))
 
+%
+TR      = perlin(500); TR = TR(1,:);
+TR      = (TR - min(TR)) ./ max(TR - min(TR));
+TR      = 1e-3 * (10.5  + 3.5 * TR);
+
 % Init
 t_grid          = nan(length(snr_levels), length(nb_signals));
 t_gllim         = t_grid;
@@ -69,7 +71,7 @@ for f = 1:size(nb_signals,2)
     if verbose >= 1, disp(num2str(nb_signals(f))); end
 
     % Compute dico grid
-    clear X Y  
+    clear X Y D
     nb_step = floor(nb_signals(f)^(1/nb_param));
     v1  = int_T1(1) : (int_T1(2) - int_T1(1)) / (nb_step-1) : int_T1(2);
     v2  = int_T2(1) : (int_T2(2) - int_T2(1)) / (nb_step-1) : int_T2(2);
@@ -84,7 +86,7 @@ for f = 1:size(nb_signals,2)
         Y(:,3)  = repelem(v3, 1, length(v2)*length(v3));
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end
-    X       = abs(D.magnetization');
+    X       = abs((D.normalization.*D.magnetization)');
     DicoG{1}.MRSignals = X; 
     DicoG{1}.Parameters.Par = Y(:,1:nb_param);
     clear X Y
@@ -99,7 +101,7 @@ for f = 1:size(nb_signals,2)
         Y(:,3)  = int_df(1) + (int_df(2) - int_df(1)) * Y(:,3);
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end 
-    X       = abs(D.magnetization');
+    X       = abs((D.normalization.*D.magnetization)');
     
     DicoR{1}.MRSignals = AddNoise(X, snr_train); 
     DicoR{1}.Parameters.Par = Y(:,1:nb_param);
@@ -123,8 +125,8 @@ for f = 1:size(nb_signals,2)
             Ytest(:,3) = int_df(1) + (int_df(2) - int_df(1)) * Ytest(:,3);
             D       = MRF_dictionary(Ytest(:,1), Ytest(:,2), Ytest(:,3), FA, TR); 
         end
-        Xtest   = abs(D.magnetization');
-
+        Xtest   = abs((D.normalization.*D.magnetization)');
+        
         % Add noise
         [XtestN, tmp]       = AddNoise(Xtest, snr_levels(snr));
         real_snr(snr,f)     = mean(tmp); tmp = [];
@@ -187,23 +189,28 @@ subplot(4,4,[1 2])
 plot(FA * 180 / pi)
 xlabel('TR index'); ylabel('FA (degrees)')
 ylim([0 90]); xlim([0 length(TR)])
+title('(a)')
 
 subplot(4,4,[5 6])
 plot(TR*1e3)
 xlabel('TR index'); ylabel('TR (ms)')
 ylim([10 14]); xlim([0 length(TR)])
+title('(b)')
 
 subplot(4,4,[3 4 7 8])
 plot(fing_signals')
-ylim([0 .2]); xlim([0 length(TR)])
+% ylim([0 .2]); 
+xlim([0 length(TR)])
 xlabel('TR index');
-title('Signals of dictionary')
+title('(c)')
 
+
+ldg = {'d','e','f'};
 
 count = 1;
 for f = 1:length(nb_signals)
 
-    ax(count) = subplot(4,4,[9 10 13 14]+2*(f-1));
+    subplot(2,2,2+f);
     set(groot,'defaultAxesColorOrder',colors)
 
     hold on;
@@ -227,14 +234,13 @@ for f = 1:length(nb_signals)
     set(gca,'FontSize',12)
     lgd.FontSize = 16;
 
+    title(['(' ldg{f} ') ' num2str(nb_signals(f)) '-signal dictionary'])
+    
     xlim([5 110])
     ylim([0.01 0.5])
 
     xlabel('SNR');
 end
-
-% linkaxes(ax(1:length(nb_signals)),'xy')
-% linkaxes(ax(length(nb_signals)+1:nb_param*length(nb_signals)),'xy')
 
 
 %% Exporting figures
