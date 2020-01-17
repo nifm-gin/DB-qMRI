@@ -1,7 +1,9 @@
 
 %% Description
 %
-% Explaination
+% We investigate the correlation between the confidence index (CI) and the
+% estimate errors (RMSE). Two experiments follow each other to produce an
+% efficient process. 
 %
 % Fabien Boux - 01/2020
 
@@ -19,12 +21,12 @@ nb_train_signals = 2000;
 nb_test_signals  = 10000;
 snr_train_p1 = 40;
 snr_test_p1 = [20 40 60];
-snr_train_p2 = [40 50 60];
+snr_train_p2 = [20 30 40 50 60 70 80];
 snr_test_p2 = logspace(1, 2, 20);
 
 % Experiment settings
-nb_repetition_p1 = 50;
-nb_repetition_p2 = 20;
+nb_repetition_p1 = 100;
+nb_repetition_p2 = 25;
 
 % Regression settings
 Parameters.K = 50;
@@ -83,19 +85,22 @@ parfor rep = 1:nb_repetition_p1
     tmp_pp_err = [];
     for s = 1:length(snr_test_p1)
         
-        Xtest_noisy = AddNoise(Xtest,snr_test_p1(s));
+        Xtest_noisy = AddNoise(Xtest, snr_test_p1(s));
         
         Estim   = AnalyzeMRImages(Xtest_noisy, [], 'RegressionMRF', Params);
         Ygllim  = squeeze(Estim.Regression.Y(:,1:nb_param));
         Cov     = squeeze(Estim.Regression.Cov);
         Rmse    = EvaluateEstimation(Ytest, Ygllim);
 
-        tmp_pp_std(s,:) = nanmean(Cov,1).^.5;
-        tmp_pp_err(s,:) = nanmean((Ytest-Ygllim).^2,1).^.5;
+%         tmp_pp_std(s,:) = nanmean(Cov,1).^.5;
+%         tmp_pp_err(s,:) = Rmse;
+        
+        tmp_pp_std(s,1) = mean(nanmean(Cov,2).^.5);
+        tmp_pp_err(s,1) = mean(mean((Ytest-Ygllim).^2,2).^.5);
     end
     
-    pp_std(:,:,rep) = tmp_pp_std;
-    pp_err(:,:,rep) = tmp_pp_err;
+    pp_std(:,1,rep) = tmp_pp_std;
+    pp_err(:,1,rep) = tmp_pp_err;
 end
 
 %% Saving (process 1)
@@ -163,7 +168,7 @@ for st = 1:length(snr_train_p2)
             Rmse    = EvaluateEstimation(Ytest, Ygllim);
 
             tmp_pp_std(:,s) = nanmean(Cov,1).^.5;
-            tmp_pp_err(:,s) = nanmean((Ytest-Ygllim).^2,1).^.5;
+            tmp_pp_err(:,s) = Rmse;
         end
 
         cc(:,:,rep,st) = tmp_pp_std ./ tmp_pp_err;
@@ -183,14 +188,17 @@ end
 
 fig = figure;
 
+param = 1;
+
 subplot(121)
 hold on
 
 for f = 1:size(pp_std,1)
     
-    plot(squeeze(mean(pp_std(f,:,:),2))', squeeze(mean(pp_err(f,:,:),2))','.','MarkerSize',12)
+%     plot(squeeze(mean(pp_std(f,:,:),2))', squeeze(mean(pp_err(f,:,:),2))','.','MarkerSize',12)
+    plot(squeeze(pp_std(f,param,:))', squeeze(pp_err(f,param,:))','.','MarkerSize',12)
 
-    mdl = fitlm(squeeze(mean(pp_std(f,:,:),2)), squeeze(mean(pp_err(f,:,:),2)),'Intercept',false);
+    mdl = fitlm(squeeze(pp_std(f,param,:)), squeeze(pp_err(f,param,:)),'Intercept',false);
     plot([0 max(pp_std(:))],[0 max(pp_std(:))]*mdl.Coefficients.Estimate, 'k')
 
     leg{2*f-1}  = ['SNR_{test} = ' num2str(snr_test_p1(f))];
@@ -210,16 +218,15 @@ F = @(xdata,x)x(1)*exp(-x(2)./xdata) + x(3);
 
 for st = 1:length(snr_train_p2)
     
-    ff = mean(mean(1./squeeze(cc(:,:,:,st)),1),2);
-    plot(snr_test_p2, ff,'.-','Markersize',15)
+    ff = mean(1./squeeze(cc(:,:,:,st)),3);
+    plot(snr_test_p2, ff(param,:),'.-','Markersize',15)
 
-    a = levenbergmarquardt(F, snr_test_p2, ff', [max(ff) -1 min(ff)]);
-    plot(snr_test_p2, F(snr_test_p2,a), 'k--')
+    a = levenbergmarquardt(F, snr_test_p2, ff(param,:), [max(ff(param,:)) -1 min(ff(param,:))]);
+    plot(snr_test_p2, F(snr_test_p2,a), 'k--','HandleVisibility','off')
 
-    leg{2*st-1} = ['SNR_{train} = ' num2str(snr_train_p2(st))];
-    leg{2*st} = 'fit';
+    leg{st} = ['SNR_{train} = ' num2str(snr_train_p2(st))];
 end
-plot([10 100], [1 1], 'k')
+% plot([10 100], [1 1], 'k')
 
 title('\alpha = f(SNR_{test})')
 xlabel('SNR_{test}'); ylabel('\alpha')
