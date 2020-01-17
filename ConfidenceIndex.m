@@ -188,7 +188,7 @@ end
 
 fig = figure;
 
-param = 1;
+param = 1; % first or second parameter lead to ~ same results
 
 subplot(121)
 hold on
