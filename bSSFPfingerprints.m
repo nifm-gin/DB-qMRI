@@ -16,17 +16,17 @@ backup  = 1;
 % Signal settings
 int_T1  = 1e-3 * [100 5100];	% between 100 and 5000 ms
 int_T2  = 1e-3 * [20  3020];    % between 20 and 3000 ms
-int_df  = 2*pi * [-400 400];  	% +/- 400 Hz
+int_df  = pi/180 * [-400 400];  	% +/- 400 Hz
 
-nb_param = 2;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
-nb_signals = [400 6400]; % if nb_param == 2
-% nb_signals = [1000 8000]; % if nb_param == 3
+nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
+% nb_signals = [400 6400]; % if nb_param == 2
+nb_signals = [4096 132651]; % if nb_param == 3
     
 % Simulation settings
 FA      = (pi/180)* [90 ...
-           10 + 50 *sin((2*pi/500) *(1:250)) + 2*randn(1,250) ...
+           10 + 50 *sin((2*pi/500) *(1:250)) + 5*randn(1,250) ...
            zeros(1,49) ...
-           (10 + 50 *sin((2*pi/500) *(1:200)) + 4*randn(1,200)) /2]; % Flip angles
+           (10 + 50 *sin((2*pi/500) *(1:200)) + 5*randn(1,200)) /2]; % Flip angles
 % TR      = 1e-3 * (10.5  + 3.5 * rand(1,500));    % Uniform between 10.5 and 14 ms
 
 % Experiment settings
@@ -34,7 +34,7 @@ snr_levels = [logspace(1, 2.035, 39) inf];
 nb_test_signals = 10000;
 
 % Regression settings
-Parameters.K = 50;
+Parameters.K = 100;
 Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
@@ -71,8 +71,8 @@ for f = 1:size(nb_signals,2)
     if verbose >= 1, disp(num2str(nb_signals(f))); end
 
     % Compute dico grid
-    clear X Y D
-    nb_step = floor(nb_signals(f)^(1/nb_param));
+    clear X Y
+    nb_step = round(nb_signals(f)^(1/nb_param));
     v1  = int_T1(1) : (int_T1(2) - int_T1(1)) / (nb_step-1) : int_T1(2);
     v2  = int_T2(1) : (int_T2(2) - int_T2(1)) / (nb_step-1) : int_T2(2);
     v3  = int_df(1) : (int_df(2) - int_df(1)) / (nb_step-1) : int_df(2);
@@ -82,16 +82,16 @@ for f = 1:size(nb_signals,2)
         D       = MRF_dictionary(Y(:,1), Y(:,2), [], FA, TR); 
     elseif nb_param == 3
         Y(:,1)  = repmat(v1, 1, length(v2)*length(v3));
-        Y(:,2)  = repmat(repmat(v2, 1, length(v1)), 1,length(v3));
+        Y(:,2)  = repmat(repelem(v2, 1, length(v1)), 1,length(v3));
         Y(:,3)  = repelem(v3, 1, length(v2)*length(v3));
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end
-    X       = abs((D.normalization.*D.magnetization)');
+    X       = abs(D.normalization.*D.magnetization)';
     DicoG{1}.MRSignals = X; 
     DicoG{1}.Parameters.Par = Y(:,1:nb_param);
-    clear X Y
 
     % Compute training dataset
+    clear X Y
     Y       = net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb_signals(f));
     Y(:,1)  = int_T1(1) + (int_T1(2) - int_T1(1)) * Y(:,1);
     Y(:,2)  = int_T2(1) + (int_T2(2) - int_T2(1)) * Y(:,2); 
@@ -101,14 +101,15 @@ for f = 1:size(nb_signals,2)
         Y(:,3)  = int_df(1) + (int_df(2) - int_df(1)) * Y(:,3);
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end 
-    X       = abs((D.normalization.*D.magnetization)');
-    
+    X       = abs(D.normalization.*D.magnetization)';
     DicoR{1}.MRSignals = AddNoise(X, snr_train); 
     DicoR{1}.Parameters.Par = Y(:,1:nb_param);
 
     if size(DicoG{1}.MRSignals,1) ~= size(DicoR{1}.MRSignals,1)
         warning('Sizes are not equals')
     end
+    
+    [~, Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
     
     clear D
     parfor snr = 1:length(snr_levels)
@@ -125,7 +126,7 @@ for f = 1:size(nb_signals,2)
             Ytest(:,3) = int_df(1) + (int_df(2) - int_df(1)) * Ytest(:,3);
             D       = MRF_dictionary(Ytest(:,1), Ytest(:,2), Ytest(:,3), FA, TR); 
         end
-        Xtest   = abs((D.normalization.*D.magnetization)');
+        Xtest   = abs(D.normalization.*D.magnetization)';
         
         % Add noise
         [XtestN, tmp]       = AddNoise(Xtest, snr_levels(snr));
@@ -142,7 +143,7 @@ for f = 1:size(nb_signals,2)
 
         % Perform DBL
         tic;
-        Estim   = AnalyzeMRImages(XtestN,DicoR,'DBL',Parameters,Ytest(:,1:nb_param));
+        Estim   = AnalyzeMRImages(XtestN,[],'DBL',Params,Ytest(:,1:nb_param));
 
         t_gllim(snr,f)   	= toc;
         mNRMSE_gllim(snr,f,:) = Estim.Regression.Errors.Nrmse;
@@ -152,14 +153,14 @@ for f = 1:size(nb_signals,2)
     end %snr
 end
 
-t(:,1,:)        = t_grid;
-t(:,2,:)        = t_gllim;
+t(:,1,:) 	= t_grid;
+t(:,2,:) 	= t_gllim;
 mNRMSE(:,1,:,:) = mNRMSE_grid;
 mNRMSE(:,2,:,:) = mNRMSE_gllim;
-mRMSE(:,1,:,:)  = mRMSE_grid;
-mRMSE(:,2,:,:)  = mRMSE_gllim;
-mMAE(:,1,:,:)   = mMAE_grid;
-mMAE(:,2,:,:)   = mMAE_gllim;
+mRMSE(:,1,:,:) = mRMSE_grid;
+mRMSE(:,2,:,:) = mRMSE_gllim;
+mMAE(:,1,:,:) = mMAE_grid;
+mMAE(:,2,:,:) = mMAE_gllim;
 
 fing_signals    = X(randi(size(X,1),10,1),:);
 
@@ -210,7 +211,7 @@ ldg = {'d','e','f'};
 count = 1;
 for f = 1:length(nb_signals)
 
-    subplot(2,2,2+f);
+    ax(f) = subplot(2,2,2+f);
     set(groot,'defaultAxesColorOrder',colors)
 
     hold on;
@@ -236,11 +237,12 @@ for f = 1:length(nb_signals)
 
     title(['(' ldg{f} ') ' num2str(nb_signals(f)) '-signal dictionary'])
     
-    xlim([5 110])
-    ylim([0.01 0.5])
+%     xlim([5 110])
+%     ylim([0.01 0.5])
 
     xlabel('SNR');
 end
+linkaxes(ax,'y')
 
 
 %% Exporting figures

@@ -92,15 +92,12 @@ parfor rep = 1:nb_repetition_p1
         Cov     = squeeze(Estim.Regression.Cov);
         Rmse    = EvaluateEstimation(Ytest, Ygllim);
 
-%         tmp_pp_std(s,:) = nanmean(Cov,1).^.5;
-%         tmp_pp_err(s,:) = Rmse;
-        
-        tmp_pp_std(s,1) = mean(nanmean(Cov,2).^.5);
-        tmp_pp_err(s,1) = mean(mean((Ytest-Ygllim).^2,2).^.5);
+        tmp_pp_std(s,:) = nanmean(Cov,1).^.5;
+        tmp_pp_err(s,:) = Rmse;
     end
     
-    pp_std(:,1,rep) = tmp_pp_std;
-    pp_err(:,1,rep) = tmp_pp_err;
+    pp_std(:,:,rep) = tmp_pp_std;
+    pp_err(:,:,rep) = tmp_pp_err;
 end
 
 %% Saving (process 1)

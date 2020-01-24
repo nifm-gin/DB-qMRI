@@ -134,7 +134,7 @@ end
 
 if backup == 1
     clear Dico* Estim X* Y*
-    save(['temp/' 'NoisyDicoSignals'])
+    save(['temp/' 'NoisyDicoSignals-supp'])
 end
 
 
@@ -150,10 +150,10 @@ colors = [           0    0.4470    0.7410
           
 fig = figure;
 
-for n = 1:size(nb_signals,1)
+for n = 2:size(nb_signals,1)
     for f = 1:size(nb_signals,2)
         
-        ax(f) = subplot(size(nb_signals,1),size(nb_signals,2), size(nb_signals,2) *(n-1) + f);
+        ax(f) = subplot(size(nb_signals,1)-1,size(nb_signals,2), size(nb_signals,2) *(n-1-1) + f);
         hold on
         plot([0 120], [mRMSE1(end,n,f) mRMSE1(end,n,f)], '--', 'linewidth',1.5, 'color', colors(1,:),'HandleVisibility','off')  
         plot(real_snr(:,n,f), mRMSE1(:,n,f), '.-','markersize',15, 'color', colors(1,:))

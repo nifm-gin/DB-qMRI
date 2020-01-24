@@ -292,3 +292,19 @@ if backup == 1
     savefig(fig_supp, ['figures/' 'DictionarySize' '-supp'])
 end
 
+
+%% Main results
+
+% disp(['For 5 parameters the DBL error is ' num2str(mean(reshape(mRMSE(:,1,4,:) ./ mRMSE(:,2,4,:),1,[] )),3)...
+%     ' +/- ' num2str(std(reshape(mRMSE(:,1,4,:) ./ mRMSE(:,2,4,:),1,[] )),2) ' lower than the DBM error'])
+% disp(['For 7 parameters the DBL error is ' num2str(mean(reshape(mRMSE(:,1,5,:) ./ mRMSE(:,2,5,:),1,[] )),3)...
+%     ' +/- ' num2str(std(reshape(mRMSE(:,1,5,:) ./ mRMSE(:,2,5,:),1,[] )),2) ' lower than the DBM error'])
+% 
+% disp(' ')
+% 
+% disp(['For the DBM method the difference between the biggest and the smallest dictionaries is ' ...
+%     num2str(mean(reshape(mRMSE(:,1,4,1) - mRMSE(:,1,4,end),1,[])),2) ...
+%     ' +/- ' num2str(std(reshape(mRMSE(:,1,4,1) - mRMSE(:,1,4,end),1,[])),2)])
+% disp(['For the DBL method the difference between the biggest and the smallest dictionaries is ' ...
+%     num2str(mean(reshape(mRMSE(:,2,4,1) - mRMSE(:,2,4,end),1,[])),2) ...
+%     ' +/- ' num2str(std(reshape(mRMSE(:,2,4,1) - mRMSE(:,2,4,end),1,[])),2)])
