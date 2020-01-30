@@ -51,7 +51,7 @@ switch Method
         for s = 1:slices
             %Estimation of parameters
             Estimation.GridSearch.Y(:,:,:,s) = ...
-                reshape(EstimateParametersFromGrid(reshape(Sequences(:,:,:,s),s1*s2,t), abs(Dico{f}.MRSignals), Dico{f}.Parameters.Par), s1,s2, []);
+                reshape(EstimateParametersFromGrid(reshape(Sequences(:,:,:,s),s1*s2,t), Dico{f}.MRSignals, Dico{f}.Parameters.Par), s1,s2, []);
                         
             %Errors computation if a reference image is provided
             if ~isempty(References)
@@ -80,7 +80,7 @@ switch Method
                 Parameters.factors.normalization = 0;
             end
             
-            Xtrain = abs(Dico{f}.MRSignals);
+            Xtrain = Dico{f}.MRSignals;
             [~,Parameters] = EstimateParametersFromRegression(Xtrain, Xtrain, Dico{f}.Parameters.Par, Dico{f}.Parameters.Par, Parameters);
         else
             Dico{f}.MRSignals       = [];
@@ -93,7 +93,7 @@ switch Method
             
             %Estimation of parameters
             [Yestim,~,Cov,~,Pik] = ...
-                EstimateParametersFromRegression(reshape(Sequences(:,:,:,s),s1*s2,t), abs(Dico{f}.MRSignals), Dico{f}.Parameters.Par, [], Parameters);
+                EstimateParametersFromRegression(reshape(Sequences(:,:,:,s),s1*s2,t), Dico{f}.MRSignals, Dico{f}.Parameters.Par, [], Parameters);
             
             %Rescale
             if any(strcmp(fieldnames(Parameters),'factors')) && normalization == 1
