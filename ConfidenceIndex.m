@@ -78,7 +78,7 @@ parfor rep = 1:nb_repetition_p1
     Dico = [];
     Dico{1}.MRSignals       = AddNoise(Xtrain, snr_train_p1);
     Dico{1}.Parameters.Par  = Ytrain;
-    [~,Params]  = AnalyzeMRImages(Xtrain,Dico,'RegressionMRF',Parameters);
+    [~,Params]  = AnalyzeMRImages(Xtrain,Dico,'DBL',Parameters);
     
     % Estimates
     tmp_pp_std = [];
@@ -87,7 +87,7 @@ parfor rep = 1:nb_repetition_p1
         
         Xtest_noisy = AddNoise(Xtest, snr_test_p1(s));
         
-        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'RegressionMRF', Params);
+        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params);
         Ygllim  = squeeze(Estim.Regression.Y(:,1:nb_param));
         Cov     = squeeze(Estim.Regression.Cov);
         Rmse    = EvaluateEstimation(Ytest, Ygllim);
@@ -150,7 +150,7 @@ for st = 1:length(snr_train_p2)
         Dico    = [];
         Dico{1}.MRSignals       = Xtrain;
         Dico{1}.Parameters.Par  = Ytrain;
-        [~,Params]  = AnalyzeMRImages(Xtrain,Dico,'RegressionMRF',Parameters);
+        [~,Params]  = AnalyzeMRImages(Xtrain,Dico,'DBL',Parameters);
 
         % Estimating
         tmp_pp_std = [];
@@ -159,7 +159,7 @@ for st = 1:length(snr_train_p2)
 
             Xtest_noisy = AddNoise(Xtest, snr_test_p2(s));
 
-            Estim   = AnalyzeMRImages(Xtest_noisy, [], 'RegressionMRF', Params);
+            Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params);
             Ygllim  = squeeze(Estim.Regression.Y(:,1:nb_param));
             Cov     = squeeze(Estim.Regression.Cov);
             Rmse    = EvaluateEstimation(Ytest, Ygllim);

@@ -20,7 +20,7 @@ int_df  = pi/180 * [0 400];  % +/- 400 Hz
 
 nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
 % nb_signals = [400 6400]; % if nb_param == 2
-nb_signals = [4096 226981]; % if nb_param == 3
+nb_signals = [1331 4096]; % if nb_param == 3
     
 % Simulation settings
 FA      = (pi/180)* [90 ...
@@ -34,7 +34,7 @@ FA      = (pi/180)* [90 ...
 % TR      = 1e-3 * (10.5  + 3.5 * rand(1,500));    % Uniform between 10.5 and 14 ms
 
 % Experiment settings
-snr_levels = [logspace(1, 2.035, 39) inf];
+snr_levels = [logspace(1, 2.035, 19) inf];
 nb_test_signals = 10000;
 
 % Regression settings
@@ -91,8 +91,8 @@ for f = 1:size(nb_signals,2)
         Y(:,3)  = repelem(v3, 1, length(v2)*length(v3));
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end
-    X       = abs(D.normalization.*D.magnetization)';
-    DicoG{1}.MRSignals = X; 
+    X       = (D.normalization.*D.magnetization).';
+    DicoG{1}.MRSignals = abs(X); 
     DicoG{1}.Parameters.Par = Y(:,1:nb_param);
 
     % Compute training dataset
@@ -106,18 +106,20 @@ for f = 1:size(nb_signals,2)
         Y(:,3)  = int_df(1) + (int_df(2) - int_df(1)) * Y(:,3);
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end 
-    X       = abs(D.normalization.*D.magnetization)';
-    DicoR{1}.MRSignals = AddNoise(X, snr_train); 
+    X       = (D.normalization.*D.magnetization).';
+    X       = AddNoise(X, snr_train); 
+    DicoR{1}.MRSignals = abs(X);
     DicoR{1}.Parameters.Par = Y(:,1:nb_param);
 
     if size(DicoG{1}.MRSignals,1) ~= size(DicoR{1}.MRSignals,1)
         warning('Sizes are not equals')
     end
     
+    DicoR{1}.MRSignals = abs(DicoR{1}.MRSignals);
     [~, Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
     
     clear D
-    for snr = 1:length(snr_levels)
+    parfor snr = 1:length(snr_levels)
 
         if verbose == 2, disp(['f = ' num2str(f) ' & SNR = ' num2str(snr_levels(snr))]); end
 
@@ -131,27 +133,25 @@ for f = 1:size(nb_signals,2)
             Ytest(:,3) = int_df(1) + (int_df(2) - int_df(1)) * Ytest(:,3);
             D       = MRF_dictionary(Ytest(:,1), Ytest(:,2), Ytest(:,3), FA, TR); 
         end
-        Xtest   = abs(D.normalization.*D.magnetization)';
+        Xtest   = (D.normalization.*D.magnetization).';
         
         % Add noise
         [XtestN, tmp]       = AddNoise(Xtest, snr_levels(snr));
         real_snr(snr,f)     = mean(tmp); tmp = [];
+        XtestN              = abs(XtestN); % Only consider the module of signals
 
         % Perform DBM
-        tic;
         Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:nb_param));
 
-        t_grid(snr,f)       = toc;
+        t_grid(snr,f)       = Estim.GridSearch.quantification_time;
         NRMSE_grid(snr,f,:) = Estim.GridSearch.Errors.Nrmse;
         RMSE_grid(snr,f,:)	= Estim.GridSearch.Errors.Rmse;
         MAE_grid(snr,f,:) 	= Estim.GridSearch.Errors.Mae;
 
         % Perform DBL
-        tic;
-        XtestN  = abs(XtestN);
         Estim   = AnalyzeMRImages(XtestN,[],'DBL',Params,Ytest(:,1:nb_param));
 
-        t_gllim(snr,f)   	= toc;
+        t_gllim(snr,f)   	= Estim.Regression.quantification_time;
         NRMSE_gllim(snr,f,:) = Estim.Regression.Errors.Nrmse;
         RMSE_gllim(snr,f,:) = Estim.Regression.Errors.Rmse;
         MAE_gllim(snr,f,:)  = Estim.Regression.Errors.Mae;
@@ -168,7 +168,7 @@ RMSE(:,2,:,:) = RMSE_gllim;
 MAE(:,1,:,:) = MAE_grid;
 MAE(:,2,:,:) = MAE_gllim;
 
-fing_signals = X(randi(size(X,1),10,1),:);
+fing_signals = X;
 
 
 %% Saving 
@@ -205,8 +205,7 @@ ylim([10 14]); xlim([0 length(TR)])
 title('(b)')
 
 subplot(4,4,[3 4 7 8])
-plot(fing_signals')
-% ylim([0 .2]); 
+plot(fing_signals([2000 1500 30 20 10],:)') %for normalized signals add: ./ vecnorm(fing_signals,2,2)
 xlim([0 length(TR)])
 xlabel('TR index');
 title('(c)')
