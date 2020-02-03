@@ -20,7 +20,7 @@ int_df  = pi/180 * [0 400];  % +/- 400 Hz
 
 nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
 % nb_signals = [400 6400]; % if nb_param == 2
-nb_signals = [1331 4096]; % if nb_param == 3
+nb_signals = [9261 531441]; % if nb_param == 3
     
 % Simulation settings
 FA      = (pi/180)* [90 ...
@@ -119,7 +119,7 @@ for f = 1:size(nb_signals,2)
     [~, Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
     
     clear D
-    parfor snr = 1:length(snr_levels)
+    for snr = 1:length(snr_levels)
 
         if verbose == 2, disp(['f = ' num2str(f) ' & SNR = ' num2str(snr_levels(snr))]); end
 
