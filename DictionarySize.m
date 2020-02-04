@@ -13,7 +13,7 @@
 
 % Execution settings
 verbose = 1; %0, 1 or 2 for more details
-backup  = 1;
+backup  = 0;
 
 % Signal settings
 int     = [.01 1]; %TODO [.1 1] ?
@@ -110,72 +110,73 @@ for n = 1:size(nb_signals,1)
         end
         
         % Need to remove parfor loop for memory requirement computation
-        parfor snr = 1:length(snr_levels)
+        for snr = 1:1%length(snr_levels)
 
             if verbose == 2, disp(['(n,f) = (' num2str(n) ',' num2str(f) ') - Snr order: ' num2str(snr_levels(snr))]); end
             
             % Generate test data
             Ytest 	= int(1) + (int(2) - int(1)) * rand(nb_test_signals,nb_param(n));
-            Xtest = [];
-            for sim = 1:size(Ytest,1)
-                Xtest(sim,:) = toyMRsignal(Ytest(sim,:),p(1:nb_param(n)));
-            end
+%             Xtest = [];
+%             for sim = 1:size(Ytest,1)
+%                 Xtest(sim,:) = toyMRsignal(Ytest(sim,:),p(1:nb_param(n)));
+%             end
             
             % Add noise
-            [XtestN, tmp]       = AddNoise(Xtest, snr_levels(snr));
-            real_snr(snr,n,f)   = mean(tmp); tmp = [];
+%             [XtestN, tmp]       = AddNoise(Xtest, snr_levels(snr));
+%             real_snr(snr,n,f)   = mean(tmp); tmp = [];
 
             % Perform DBM
-            Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:size(DicoG{1}.Parameters.Par,2)));
+%             Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:size(DicoG{1}.Parameters.Par,2)));
             
             %time
-            t_grid(snr,n,f)         = Estim.GridSearch.quantification_time;
+%             t_grid(snr,n,f)         = Estim.GridSearch.quantification_time;
             
             %memory requirement
-%             me      = whos('DicoG');
-%             mem_size_grid(snr,n,f)  = me.bytes;
+            me      = whos('DicoG');
+            mem_size_grid(snr,n,f)  = me.bytes;
             
             %estimation accuracy
-            mNRMSE_grid(snr,n,f)    = nanmean(Estim.GridSearch.Errors.Nrmse);
-            mRMSE_grid(snr,n,f)     = nanmean(Estim.GridSearch.Errors.Rmse);
-            mMAE_grid(snr,n,f)      = nanmean(Estim.GridSearch.Errors.Mae);
+%             mNRMSE_grid(snr,n,f)    = nanmean(Estim.GridSearch.Errors.Nrmse);
+%             mRMSE_grid(snr,n,f)     = nanmean(Estim.GridSearch.Errors.Rmse);
+%             mMAE_grid(snr,n,f)      = nanmean(Estim.GridSearch.Errors.Mae);
             
             % Perform DBL
-            Estim   = AnalyzeMRImages(XtestN,DicoR,'DBL',Parameters,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+%             Estim   = AnalyzeMRImages(XtestN,DicoR,'DBL',Parameters,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+            [Estim,Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
             
             %times
-            t_gllim(snr,n,f)        = Estim.Regression.quantification_time;
-            t_gllim_learn(snr,n,f)  = Estim.Regression.learning_time;
+%             t_gllim(snr,n,f)        = Estim.Regression.quantification_time;
+%             t_gllim_learn(snr,n,f)  = Estim.Regression.learning_time;
             
             %memory requirement
-%             me      = whos('Parameters');
-%             mem_size_gllim(snr,n,f) = me.bytes;
+            me      = whos('Params');
+            mem_size_gllim(snr,n,f) = me.bytes;
             
             %estimation accuracy
-            mNRMSE_gllim(snr,n,f)   = nanmean(Estim.Regression.Errors.Nrmse);
-            mRMSE_gllim(snr,n,f)    = nanmean(Estim.Regression.Errors.Rmse);
-            mMAE_gllim(snr,n,f)     = nanmean(Estim.Regression.Errors.Mae);
+%             mNRMSE_gllim(snr,n,f)   = nanmean(Estim.Regression.Errors.Nrmse);
+%             mRMSE_gllim(snr,n,f)    = nanmean(Estim.Regression.Errors.Rmse);
+%             mMAE_gllim(snr,n,f)     = nanmean(Estim.Regression.Errors.Mae);
             
         end %snr
     end
 end
 
 %times (sec)
-t(:,1,:,:)      = t_grid;
-t(:,2,:,:)      = t_gllim;
-t(:,3,:,:)      = t_gllim_learn;
+% t(:,1,:,:)      = t_grid;
+% t(:,2,:,:)      = t_gllim;
+% t(:,3,:,:)      = t_gllim_learn;
 
 %memory (bits)
-% mem(:,1,:)      = mem_size_grid *8;
-% mem(:,2,:)      = mem_size_gllim *8;
+mem(:,1,:,:)  	= mem_size_grid;
+mem(:,2,:,:)  	= mem_size_gllim;
 
 %errors
-mNRMSE(:,1,:,:) = mNRMSE_grid;
-mNRMSE(:,2,:,:) = mNRMSE_gllim;
-mRMSE(:,1,:,:)  = mRMSE_grid;
-mRMSE(:,2,:,:)  = mRMSE_gllim;
-mMAE(:,1,:,:)   = mMAE_grid;
-mMAE(:,2,:,:)   = mMAE_gllim;
+% mNRMSE(:,1,:,:) = mNRMSE_grid;
+% mNRMSE(:,2,:,:) = mNRMSE_gllim;
+% mRMSE(:,1,:,:)  = mRMSE_grid;
+% mRMSE(:,2,:,:)  = mRMSE_gllim;
+% mMAE(:,1,:,:)   = mMAE_grid;
+% mMAE(:,2,:,:)   = mMAE_gllim;
 
 
 %% Saving 
