@@ -218,6 +218,9 @@ for i = [1 4 7]
     set(gca, 'fontsize',15, 'XTickLabels',{'Regular','Rand','QRand'})
     
     title([titles{c} ' ' num2str(title_nb_param(i)) ' parameters'])
+    
+%     m = median(dat);
+%     disp((m(1) - m(3)) / m(1))
 end
 
 linkaxes(h,'y')

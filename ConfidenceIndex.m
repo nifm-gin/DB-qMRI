@@ -91,13 +91,16 @@ parfor rep = 1:nb_repetition
         tmp_pp_std(s,:) = nanmean(Cov,1).^.5;
         tmp_pp_err(s,:) = Rmse;
         
-        Params_updt = Params;
-        var_noise = abs( mean((max(Xtest,[],2) ./ real_snr).^2) ); ...
-%             - mean((max(Dico{1}.MRSignals,[],2) ./ real_snr_train).^2) );
-%         var_noise = 1 ./ mean(real_snr).^2;
-        Params_updt.theta = updateSigma(Params.theta, var_noise);
+%         Params_updt = Params;
+%         var_noise = mean((max(Xtest,[],2) ./ real_snr).^2);
+%         Params_updt.theta = updateSigma(Params.theta, var_noise);
+%         Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params_updt);
         
-        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params_updt);
+        %this line is equivalent to the previous implementation since it
+        %corresponds to the integration in our estimation function of the
+        %model correction.
+        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params, [],[], real_snr);
+
         Ygllim  = squeeze(Estim.Regression.Y(:,1:nb_param));
         Cov     = squeeze(Estim.Regression.Cov);
         Rmse    = EvaluateEstimation(Ytest, Ygllim);
