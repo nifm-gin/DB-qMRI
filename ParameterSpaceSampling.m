@@ -219,8 +219,9 @@ for i = [1 4 7]
     
     title([titles{c} ' ' num2str(title_nb_param(i)) ' parameters'])
     
-%     m = median(dat);
-%     disp((m(1) - m(3)) / m(1))
+%     m = mean(dat);
+%     disp(['QRand / Grid: ' num2str(1 - m(3) / m(1))])
+%     disp(['QRand / Rand: ' num2str(1 - m(3) / m(2))])
 end
 
 linkaxes(h,'y')
@@ -251,10 +252,6 @@ for i = 1:length(DBL_rmse)
     xtickangle(45)
     pause(.2)
     
-    if verbose >= 1
-%         disp(['KS test: ' num2str(kstest(dat(:,1),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,2),'Alpha',.0001)) ' - ' num2str(kstest(dat(:,3),'Alpha',alpha))])
-%         disp(['T test: ' num2str(ttest2(dat(:,1),dat(:,2),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,1),dat(:,3),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal'))])
-    end
     
     xt  = get(gca, 'XTick');
     hold on
@@ -276,17 +273,12 @@ for i = 1:length(DBL_rmse)
     xtickangle(45)
     pause(.2)
     
-    if verbose >= 1
-%         disp(['KS test: ' num2str(kstest(dat(:,1),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,2),'Alpha',.0001)) ' - ' num2str(kstest(dat(:,3),'Alpha',alpha))])
-%         disp(['T test: ' num2str(ttest2(dat(:,1),dat(:,2),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,1),dat(:,3),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal'))])
+    if verbose >= 2
+        disp(['KS test: ' num2str(kstest(dat(:,1),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,2),'Alpha',alpha)) ' - ' num2str(kstest(dat(:,3),'Alpha',alpha))])
+        disp(['T test: ' num2str(ttest2(dat(:,1),dat(:,2),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,1),dat(:,3),'Alpha',alpha,'Vartype','unequal')) ' - ' num2str(ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal'))])
     end
     
-%     xt  = get(gca, 'XTick');
-%     hold on
-%     m1 = max(dat(:,1));
-%     m2 = max(dat(:,2));
-%     m3 = max(dat(:,3));
-%     count = 0;
+    
 %     if kstest(dat(:,2),'Alpha',alpha) == 1 && ...
 %             kstest(dat(:,3),'Alpha',alpha) == 1 && ...
 %             ttest2(dat(:,2),dat(:,3),'Alpha',alpha,'Vartype','unequal') == 1
@@ -311,23 +303,14 @@ for i = 1:length(DBL_rmse)
 %     end
 %     hold off
     
-%     if i == 1
-%         ylim([0 0.2])
-%     elseif i == 2 || i == 3
-%         ylim([0.01 0.11])
-%     elseif i == 4 || i == 5 || i == 6
-%         ylim([0.03 0.16])
-%     elseif i > 6
-%         ylim([0.05 0.2])
-%     end
+%     m = mean(dat);
+%     disp(['QRand / Grid: ' num2str(1 - m(6) / m(4))])
+%     disp(['QRand / Rand: ' num2str(1 - m(6) / m(5))])
 end
 
 linkaxes(h(1:3), 'y')
-% ylim(h(2:3),[0.01 0.11])
 linkaxes(h(4:6), 'y')
-% ylim(h(4:6),[0.0 0.1])
 linkaxes(h(7:8), 'y')
-% ylim(h(7:8),[0.0 0.1])
 
 
 %% Sampling strategies illustration

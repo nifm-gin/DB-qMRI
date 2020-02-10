@@ -91,15 +91,15 @@ parfor rep = 1:nb_repetition
         tmp_pp_std(s,:) = nanmean(Cov,1).^.5;
         tmp_pp_err(s,:) = Rmse;
         
-%         Params_updt = Params;
-%         var_noise = mean((max(Xtest,[],2) ./ real_snr).^2);
-%         Params_updt.theta = updateSigma(Params.theta, var_noise);
-%         Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params_updt);
+        Params_updt = Params;
+        var_noise = mean((max(Xtest,[],2) ./ real_snr).^2);
+        Params_updt.theta = updateSigma(Params.theta, var_noise);
+        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params_updt);
         
         %this line is equivalent to the previous implementation since it
         %corresponds to the integration in our estimation function of the
         %model correction.
-        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params, [],[], real_snr);
+%         Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params, [],[], real_snr);
 
         Ygllim  = squeeze(Estim.Regression.Y(:,1:nb_param));
         Cov     = squeeze(Estim.Regression.Cov);
@@ -148,12 +148,12 @@ for f = 1:size(pp_std,1)
     plot(squeeze(pp_std(f,param,:))', squeeze(pp_err(f,param,:))', '.','MarkerSize',12, 'color',colors(f,:))
 
     mdl = fitlm(squeeze(pp_std(f,param,:)), squeeze(pp_err(f,param,:)),'Intercept',false);
-    plot([0 max(pp_std(:))], [0 max(pp_std(:))]*mdl.Coefficients.Estimate, 'k')
+    plot([-1 2*max(pp_std(:))], [-1 2*max(pp_std(:))]*mdl.Coefficients.Estimate, 'k')
 
     leg{2*f-1}  = ['SNR_{test} = ' num2str(snr_test(f))];
     leg{2*f}    = ['\alpha = ' num2str(mdl.Coefficients.Estimate,3) '   (R^2 = ' num2str(mdl.Rsquared.Ordinary,3) ')'];
 end
-
+xlim([0 max(pp_std2(:))]); ylim([0 max(pp_std2(:))])
 title('RMSE = \alpha x CI')
 xlabel('CI'); ylabel('RMSE')
 legend(leg)
@@ -168,7 +168,8 @@ for f = 1:size(pp_std2,1)
     leg{f}  = ['SNR_{test} = ' num2str(snr_test(f))];
 end
 mdl = fitlm(reshape(pp_std2(:,param,:),1,[]), reshape(pp_err2(:,param,:),1,[]),'Intercept',false);
-plot([0 max(pp_std2(:))], [0 max(pp_std2(:))]*mdl.Coefficients.Estimate, 'k--')
+plot([-1 2*max(pp_std2(:))], [-1 2*max(pp_std2(:))]*mdl.Coefficients.Estimate, 'k--')
+xlim([0 max(pp_std2(:))]); ylim([0 max(pp_std2(:))])
 leg{f+1} = ['\alpha = ' num2str(mdl.Coefficients.Estimate,3) '   (R^2 = ' num2str(mdl.Rsquared.Ordinary,3) ')'];
 
 title('RMSE_{corrected} = \alpha x CI_{corrected}')
@@ -184,7 +185,8 @@ for f = 1:size(pp_std2,1)
     
     leg{f}  = ['SNR_{test} = ' num2str(snr_test(f))];
 end
-plot([0 max(pp_err(:))], [0 max(pp_err(:))], 'k')
+plot([-1 2*max(pp_err(:))], [-1 2*max(pp_err(:))], 'k')
+xlim([0 max(pp_std2(:))]); ylim([0 max(pp_std2(:))])
 leg{f+1} = 'RMSE_{corrected} = RMSE';
 
 title('RMSE_{corrected} vs. RMSE')
