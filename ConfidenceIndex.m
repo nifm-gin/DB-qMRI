@@ -14,7 +14,7 @@ verbose = 1;
 backup  = 1;
 
 % Signal settings
-int   	= [0.1 1];
+int   	= [0.01 1];
 nb_param = 3;
 nb_train_signals = 10000;
 nb_test_signals  = 10000;

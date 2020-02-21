@@ -17,7 +17,7 @@ verbose = 1; %0, 1 or 2 for more details
 backup  = 1;
 
 % Signal settings
-int   	= [.1 1];
+int   	= [.01 1];
 p       = [.01 .01];
 while min(abs(pdist(p',@(x,y) x-y))) < .05, p = 0.1 + 0.9*rand(1,10); end
 

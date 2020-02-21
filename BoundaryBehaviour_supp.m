@@ -21,7 +21,7 @@ backup  = 1;
 
 % Signal settings
 nb_param = 2;
-intt  	= [0 1.5];
+intt  	= [0.01 1.5];
 p   	= [.5 .8];
 snr     = inf;
 
