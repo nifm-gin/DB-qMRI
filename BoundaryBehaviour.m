@@ -154,7 +154,7 @@ v       = 1:24:length(intt_);
 ttt     = split(num2str(intt_(v),1), ' ');
 ttt     = ttt(~cellfun('isempty',ttt));
 
-err     = Rmse_gllim;
+err     = Rmse_grid;
 bounds = [0 .3];
 
 h(nb_int-1) = subplot(2,length(int_all)-1,nb_int-1);
@@ -182,7 +182,7 @@ set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
 
 h(length(int_all)-1+nb_int) = subplot(2,length(int_all)-1,length(int_all)-1+nb_int-1);
-err     = Rmse_grid;
+err     = Rmse_gllim;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
