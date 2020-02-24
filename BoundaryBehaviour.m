@@ -19,21 +19,21 @@ backup  = 1;
 
 % Signal settings
 nb_param = 2;
-intt  	= [0.01 1.5];
+intt  	= [0.01 1];
 p   	= [.5 .8];
 snr     = inf;
 
 % Experiment settings
 nb_test_signals =  100;
 nb_train_signals = 1000;
-N     	= 300;
+N     	= 198;
 lw      = 10;
 nb_int  = 2; % Can be 2 or 3 (default 2)
 
-int_all = {{[.25 .45], [.40 .90]},...
-            {[1 1.3], [.15 .35]},...
-            {[.6  1], [.45 .7]},...
-            };
+int_all = {{[.20 .30], [.30 .60]},...
+           {[.70 .80], [.10 .25]},...
+           {[.40 .65], [.30 .45]},...
+           };
 
 % Regression settings
 Parameters = [];
@@ -42,7 +42,7 @@ Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
-snr_train  	= inf;
+snr_train  	= 100;
 
 
 %% Creating data
@@ -155,7 +155,7 @@ ttt     = split(num2str(intt_(v),1), ' ');
 ttt     = ttt(~cellfun('isempty',ttt));
 
 err     = Rmse_grid;
-bounds = [0 .3];
+bounds = [0 .2];
 
 h(nb_int-1) = subplot(2,length(int_all)-1,nb_int-1);
 

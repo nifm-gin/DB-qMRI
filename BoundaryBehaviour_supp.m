@@ -21,21 +21,20 @@ backup  = 1;
 
 % Signal settings
 nb_param = 2;
-intt  	= [0.01 1.5];
+intt  	= [0.01 1];
 p   	= [.5 .8];
 snr     = inf;
 
 % Experiment settings
 nb_test_signals =  100;
 nb_train_signals = 1000;
-N     	= 300;
+N     	= 198;
 lw      = 10;
 nb_int  = 2; % Can be 2 or 3 (default 2)
-
-int_all = {{[.25 .45], [.40 .90]},...
-            {[1 1.3], [.15 .35]},...
-            {[.6  1.3], [.6 1.3]},... % {[.6  1], [.45 .7]},...
-            };
+int_all = {{[.20 .30], [.30 .60]},...
+           {[.70 .80], [.10 .25]},...
+           {[.40 .65], [.30 .45]},...
+           };
 nb      = 3; % number of added signals
 
 % Regression settings
@@ -45,7 +44,7 @@ Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
-snr_train  	= inf;
+snr_train  	= 100;
 
 
 %% Creating data
@@ -98,9 +97,9 @@ end
 % Add some values out of the training space
 i       = i+1;
 % newY    = int_all{i}{1}(1) + (int_all{i}{1}(2) - int_all{i}{1}(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb);
-newY = [0.8534    0.7738
-    1.2500    1.1139
-    0.7376    1.1409];
+newY = [0.5689    0.5159
+    0.8333    0.7426
+    0.4917    0.7606];
 newX    = [];
 for sim = 1:size(newY,1), newX(sim,:) = toyMRsignal(newY(sim,:), p); end
 Ytrain      = [Ytrain; newY];
@@ -171,7 +170,7 @@ ttt     = split(num2str(intt_(v),1), ' ');
 ttt     = ttt(~cellfun('isempty',ttt));
 
 err     = Rmse_grid;
-bounds  = [0 .3];
+bounds  = [0 .2];
 
 h(nb_int-1) = subplot(2,length(int_all)-1,nb_int-1);
 
