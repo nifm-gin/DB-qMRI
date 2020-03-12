@@ -12,8 +12,8 @@
 %% Setting
 
 % Execution settings
-verbose = 1; %0, 1 or 2 for more details
-backup  = 0;
+verbose = 2; %0, 1 or 2 for more details
+backup  = 1;
 
 % Signal settings
 int     = [.01 1];
@@ -60,13 +60,13 @@ Steps        = nan(size(nb_signals,1), size(nb_signals,2));
 
 if verbose >= 1, disp('Nber of parameters - Dictionary size'); end
 
-for n = 1:size(nb_signals,1)
+for n = size(nb_signals,1):size(nb_signals,1) %1:size(nb_signals,1)
     
     % Prepare outliers structure
     clear outliers
     for r = 1:nb_param(n), outliers{r} = int; end
 
-    for f = 1:size(nb_signals,2)
+    for f = size(nb_signals,2):size(nb_signals,2) %1:size(nb_signals,2)
         
         if verbose >= 1, disp([num2str(nb_param(n)) ' - ' num2str(nb_signals(n,f))]); end
         
@@ -130,32 +130,33 @@ for n = 1:size(nb_signals,1)
             
             %time
             t_grid(snr,n,f)         = Estim.GridSearch.quantification_time;
-            
-            %memory requirement
-%             me      = whos('DicoG');
-%             mem_size_grid(snr,n,f)  = me.bytes;
-            
-%             estimation accuracy
+                   
+            %estimation accuracy
             mNRMSE_grid(snr,n,f)    = nanmean(Estim.GridSearch.Errors.Nrmse);
             mRMSE_grid(snr,n,f)     = nanmean(Estim.GridSearch.Errors.Rmse);
             mMAE_grid(snr,n,f)      = nanmean(Estim.GridSearch.Errors.Mae);
             
             % Perform DBL
             Estim   = AnalyzeMRImages(XtestN,DicoR,'DBL',Parameters,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
-%             [Estim,Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
-            
+
             %times
             t_gllim(snr,n,f)        = Estim.Regression.quantification_time;
             t_gllim_learn(snr,n,f)  = Estim.Regression.learning_time;
-            
-            %memory requirement
-%             me      = whos('Params');
-%             mem_size_gllim(snr,n,f) = me.bytes;
             
             %estimation accuracy
             mNRMSE_gllim(snr,n,f)   = nanmean(Estim.Regression.Errors.Nrmse);
             mRMSE_gllim(snr,n,f)    = nanmean(Estim.Regression.Errors.Rmse);
             mMAE_gllim(snr,n,f)     = nanmean(Estim.Regression.Errors.Mae);
+            
+            
+%             %memory requirement
+%             %other lines of the for loop can be ignored + parfor -> for
+%             me      = whos('DicoG');
+%             mem_size_grid(snr,n,f)  = me.bytes;
+
+%             [Estim,Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
+%             me      = whos('Params');
+%             mem_size_gllim(snr,n,f) =    me.bytes;
             
         end %snr
     end
@@ -330,3 +331,28 @@ end
 % disp(['For the DBL method the difference between the biggest and the smallest dictionaries is ' ...
 %     num2str(mean(reshape(mRMSE(:,2,4,1) - mRMSE(:,2,4,end),1,[])),2) ...
 %     ' +/- ' num2str(std(reshape(mRMSE(:,2,4,1) - mRMSE(:,2,4,end),1,[])),2)])
+
+
+
+% wmean(reshape((squeeze(mNRMSE(1:end-2,1,[3],:)) - squeeze(mNRMSE(1:end-2,2,[3],:)))...
+%     ./ squeeze(mNRMSE(1:end-2,1,[3],:)),1,[]), repmat(w,4,1)')
+% wmean(reshape((squeeze(mNRMSE(1:end-2,1,[5],:)) - squeeze(mNRMSE(1:end-2,2,[5],:)))...
+%     ./ squeeze(mNRMSE(1:end-2,1,[5],:)),1,[]), repmat(w,4,1)')
+% 
+% var(reshape((squeeze(mNRMSE(1:end-2,1,[3],:)) - squeeze(mNRMSE(1:end-2,2,[3],:)))...
+%     ./ squeeze(mNRMSE(1:end-2,1,[3],:)),1,[]), repmat(w,4,1)').^.5
+% 
+% var(reshape((squeeze(mNRMSE(1:end-2,1,[5],:)) - squeeze(mNRMSE(1:end-2,2,[5],:)))...
+%     ./ squeeze(mNRMSE(1:end-2,1,[5],:)),1,[]), repmat(w,4,1)').^.5
+
+
+
+% w = diff(snr_levels);
+% w = w(1:end-1);
+% w = w' ./ sum(w);
+% 
+% wmean((squeeze(mNRMSE(1:end-2,1,[3 5],end)) - squeeze(mNRMSE(1:end-2,2,[3 5],1)))...
+%     ./ squeeze(mNRMSE(1:end-2,1,[3 5],end)), repmat(w,1,2))
+% 
+% var((squeeze(mNRMSE(1:end-2,1,[3 5],end)) - squeeze(mNRMSE(1:end-2,2,[3 5],1)))...
+%     ./ squeeze(mNRMSE(1:end-2,1,[3 5],end)),w).^.5

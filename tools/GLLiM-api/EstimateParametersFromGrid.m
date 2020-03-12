@@ -8,8 +8,7 @@ Xobs_normalized = Xobs ./ vecnorm(Xobs,2,2);
 Xgrid_normalized = Xgrid ./ vecnorm(Xgrid,2,2);
 
 % dot-product/scalar product comparison
-score 	= Xobs_normalized * Xgrid_normalized';
-[~, idx] = max(abs(score), [], 2);
+[~, score] = max(abs(Xobs_normalized * Xgrid_normalized'), [], 2);
 
-Yestim  = Ygrid(idx,:);
-Xestim  = Xgrid(idx,:);
+Yestim  = Ygrid(score,:);
+Xestim  = Xgrid(score,:);

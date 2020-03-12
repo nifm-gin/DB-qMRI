@@ -26,8 +26,8 @@ p   	= [.5 .8];
 snr     = inf;
 
 % Experiment settings
-nb_test_signals =  100;
-nb_train_signals = 1000;
+nb_test_signals = 2e6;
+nb_train_signals = 5000;
 N     	= 198;
 lw      = 10;
 nb_int  = 2; % Can be 2 or 3 (default 2)
@@ -44,7 +44,7 @@ Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
 Parameters.Lw = 0;
-snr_train  	= 100;
+snr_train  	= 60;
 
 
 %% Creating data
@@ -108,6 +108,19 @@ Ytrain_grid = [Ytrain_grid; newY];
 Xtrain_grid = [Xtrain_grid; newX];
 
 
+% Create test signals
+Ytest_ = [];
+tmp         = rand(nb_test_signals, nb_param);
+Ytest_(:,1)  = intt(1) + (intt(2) - intt(1)) * tmp(:,1);
+Ytest_(:,2)  = intt(1) + (intt(2) - intt(1)) * tmp(:,2);
+
+Xtest_ = [];
+parfor sim = 1:size(Ytest_,1)
+    Xtest_(sim,:) = toyMRsignal(Ytest_(sim,:), p);
+end
+Xtest_  = AddNoise(Xtest_, snr);
+
+
 %% Processing 
 
 % GLLiM learning
@@ -123,31 +136,33 @@ for s1 = floor(lw/2)+1:length(intt_)-floor(lw/2)
     if verbose == 1, disp([num2str(s1-floor(lw/2)) '/' num2str(length(floor(lw/2)+1:length(intt_)-floor(lw/2)))]); end
 
     inter1(s1) = intt_(s1);
-
+    
+    subint1 = intt_([s1-floor(lw/2) s1+floor(lw/2)]);
+    
+    v1      = (subint1(1) <= Ytest_(:,1)) & (Ytest_(:,1) < subint1(2));
+    Xtest__ = Xtest_(v1,:);
+    Ytest__ = Ytest_(v1,:);
+    
     parfor s2 = floor(lw/2)+1:length(intt_)-floor(lw/2)
 
         % Test data
-        subint1 = intt_([s1-floor(lw/2) s1+floor(lw/2)]);
+        
         subint2 = intt_([s2-floor(lw/2) s2+floor(lw/2)]);
         inter2(s2) = intt_(s2);
 
-        Ytest = [];
-        tmp         = net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb_test_signals);
-        Ytest(:,1)  = subint1(1) + (subint1(2) - subint1(1)) * tmp(:,1);
-        Ytest(:,2)  = subint2(1) + (subint2(2) - subint2(1)) * tmp(:,2);
-
-        Xtest = [];
-        for sim = 1:size(Ytest,1)
-            Xtest(sim,:) = toyMRsignal(Ytest(sim,:), p);
-        end
-        Xtest_  = AddNoise(Xtest, snr);
-
+        v2  	= (subint2(1) <= Ytest__(:,2)) & (Ytest__(:,2) < subint2(2));
+        
+        Xtest   = Xtest__(v2,:);
+        Ytest   = Ytest__(v2,:);
+        dens(s1,s2) = sum(v2(:));
+        
         % Compute estimates
-        Estim   = AnalyzeMRImages(Xtest_, [], 'DBL', Parameters); 
+        Estim   = AnalyzeMRImages(Xtest, [], 'DBL', Parameters); 
         Ygllim  = Estim.Regression.Y(:,1:nb_param);
         [Rmse_gllim(s1,s2,:),~, Mae_gllim(s1,s2,:)] = EvaluateEstimation(Ytest, Ygllim);
-
-        Ygrid   = EstimateParametersFromGrid(Xtest_,Xtrain_grid,Ytrain_grid);
+        CI(s1,s2,:) = nanmean(squeeze(Estim.Regression.Cov.^.5));
+        
+        Ygrid   = EstimateParametersFromGrid(Xtest,Xtrain_grid,Ytrain_grid);
         [Rmse_grid(s1,s2,:),~, Mae_grid(s1,s2,:)] = EvaluateEstimation(Ytest, Ygrid);
     end
 end
@@ -172,7 +187,8 @@ ttt     = ttt(~cellfun('isempty',ttt));
 err     = Rmse_grid;
 bounds  = [0 .2];
 
-h(nb_int-1) = subplot(2,length(int_all)-1,nb_int-1);
+
+h(1) = subplot(221);
 
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
@@ -187,17 +203,14 @@ colormap(mycmap()); colorbar
 xlabel('Second parameter'); ylabel('First parameter')
 xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
 ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+title('(a)')
 
-if nb_int == 2
-    title('(a)')
-elseif nb_int == 3
-    title('(b)')
-end
 set(gca, 'fontsize', 18)
 set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
 
-h(length(int_all)-1+nb_int) = subplot(2,length(int_all)-1,length(int_all)-1+nb_int-1);
+
+h(3) = subplot(223);
 err     = Rmse_gllim;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
@@ -212,12 +225,31 @@ colormap(mycmap()); colorbar
 xlabel('Second parameter'); ylabel('First parameter')
 xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
 ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+title('(c)')
+    
+set(gca, 'fontsize', 18)
+set(gca,'DataAspectRatio',[10 10 10])
+set(gca,'YDir','normal')
 
-if nb_int == 2
-    title('(c)')
-elseif nb_int == 3
-    title('(d)')
+
+h(4) = subplot(224);
+
+imagesc(inter1,inter2,mean(CI,3), bounds)
+hold on
+for i = 1:length(int)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
 end
+plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12)    
+colormap(mycmap()); colorbar
+xlabel('Second parameter'); ylabel('First parameter')
+xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+title('(d)')
+
+
 set(gca, 'fontsize', 18)
 set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
