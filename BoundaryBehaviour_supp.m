@@ -231,23 +231,23 @@ set(gca, 'fontsize', 18)
 set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
 
-
-h(4) = subplot(224);
-
-imagesc(inter1,inter2,mean(CI,3), bounds)
-hold on
-for i = 1:length(int)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
-    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
-    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
-end
-plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12)    
-colormap(mycmap()); colorbar
-xlabel('Second parameter'); ylabel('First parameter')
-xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-title('(d)')
+ 
+% h(4) = subplot(224);
+% 
+% imagesc(inter1,inter2,mean(CI,3), bounds)
+% hold on
+% for i = 1:length(int)
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3)
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+%     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+%     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3)
+% end
+% plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12)    
+% colormap(mycmap()); colorbar
+% xlabel('Second parameter'); ylabel('First parameter')
+% xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% title('(d)')
 
 
 set(gca, 'fontsize', 18)

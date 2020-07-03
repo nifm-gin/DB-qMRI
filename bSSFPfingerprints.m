@@ -19,16 +19,15 @@ int_T2  = 1e-3 * [20  3000];    % between 20 and 3000 ms
 int_df  = pi/180 * [0 400];  % +/- 400 Hz
 
 nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
-% nb_signals = [400 6400]; % if nb_param == 2
-nb_signals = [9261 531441]; % if nb_param == 3
+nb_signals = [512 4096];
+% nb_signals = [9261 531441]; % if nb_param == 3
     
 % Simulation settings
 FA      = (pi/180)* [90 ...
            10 + 50 *sin((2*pi/500) *(1:250)) + 5*randn(1,250) ...
            zeros(1,50) ...
            (10 + 50 *sin((2*pi/500) *(1:250)) + 5*randn(1,250)) /2 ...
-           zeros(1,50) ...FR
-
+           zeros(1,50) ...
            10 + 50 *sin((2*pi/500) *(1:250)) + 5*randn(1,250) ...
            zeros(1,50) ...
            (10 + 50 *sin((2*pi/500) *(1:99)) + 5*randn(1,99)) /2]; % Flip angles
@@ -54,8 +53,10 @@ snr_train = 60;
 addpath(genpath('functions'))
 addpath(genpath('tools'))
 
-%
-TR      = perlin(length(FA)); TR = TR(1,:);
+% procedural noise (we believe perlin noise)
+% TR      = perlin(length(FA)); TR = TR(1,:);
+% Over way to produce perlin noise
+scale = 40; TR = perlin_noise(length(FA)/scale,scale)';
 TR      = (TR - min(TR)) ./ max(TR - min(TR));
 TR      = 1e-3 * (10.5  + 3.5 * TR);
 
@@ -206,7 +207,7 @@ ylim([10 14]); xlim([0 length(TR)])
 title('(b)')
 
 subplot(4,4,[3 4 7 8])
-plot(fing_signals([2000 1500 30 20 10],:)') %for normalized signals add: ./ vecnorm(fing_signals,2,2)
+plot(abs(fing_signals([2000 1500 30 20 10],:)') )%./ vecnorm(fing_signals([2000 1500 30 20 10],:)')) for normalized signals
 xlim([0 length(TR)])
 xlabel('TR index');
 title('(c)')
