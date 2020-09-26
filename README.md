@@ -1,4 +1,5 @@
 # DB-qMRI
+## Dictionary-based - quantitative magnetic resonance imaging
 
 ## Description
 
