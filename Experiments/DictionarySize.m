@@ -30,7 +30,7 @@ nb_test_signals = 10000;
 
 % Regression settings
 Parameters = [];
-Parameters.K = 50;
+K = 100;
 Parameters.cstr.Sigma  = 'd*';
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
@@ -38,6 +38,7 @@ Parameters.Lw = 0;
 snr_train = 60;
 
 fast_limit = 500;
+dbdl_computation = 1;
 
 
 %% Creating data
@@ -51,6 +52,8 @@ mNRMSE_grid  = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
 mRMSE_grid   = mNRMSE_grid; mMAE_grid = mNRMSE_grid; 
 mNRMSE_gllim = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
 mRMSE_gllim  = mNRMSE_gllim; mMAE_gllim = mNRMSE_gllim;
+mNRMSE_nn    = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
+mRMSE_nn     = mNRMSE_nn; mMAE_nn = mNRMSE_nn; 
 t_grid = mNRMSE_grid; t_gllim = mNRMSE_gllim; t_gllim_learn = mNRMSE_gllim;
 mem_size_grid = t_grid; mem_size_gllim = mem_size_grid; 
 Steps        = nan(size(nb_signals,1), size(nb_signals,2));
@@ -60,13 +63,13 @@ Steps        = nan(size(nb_signals,1), size(nb_signals,2));
 
 if verbose >= 1, disp('Nber of parameters - Dictionary size'); end
 
-for n = size(nb_signals,1):size(nb_signals,1) %1:size(nb_signals,1)
+for n = 1:size(nb_signals,1)
     
     % Prepare outliers structure
     clear outliers
     for r = 1:nb_param(n), outliers{r} = int; end
 
-    for f = size(nb_signals,2):size(nb_signals,2) %1:size(nb_signals,2)
+    for f = 1:size(nb_signals,2)
         
         if verbose >= 1, disp([num2str(nb_param(n)) ' - ' num2str(nb_signals(n,f))]); end
         
@@ -104,13 +107,25 @@ for n = size(nb_signals,1):size(nb_signals,1) %1:size(nb_signals,1)
         end
         
         if nb_signals(n,f) > fast_limit
-            Parameters.K = 50;
+            Parameters.K = K;
+        elseif (nb_signals(n,f) > 100) && (nb_signals(n,f) <= fast_limit)
+            Parameters.K = 30;
         else
             Parameters.K = 10;
         end
         
+        %learn models
+        [~,Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
+        
+        if dbdl_computation == 1
+            mn      = min(DicoR{1}.Parameters.Par );
+            mx      = max(DicoR{1}.Parameters.Par  - mn);
+            YtrainNN = (DicoR{1}.Parameters.Par  - mn) ./ mx;
+            NeuralNet = EstimateNNmodel(DicoR{1}.MRSignals,YtrainNN,0,'auto',100,6);
+        end
+        
         % Need to remove parfor loop for memory requirement computation
-        parfor snr = 1:length(snr_levels)
+        for snr = 1:length(snr_levels)
 
             if verbose == 2, disp(['(n,f) = (' num2str(n) ',' num2str(f) ') - Snr order: ' num2str(snr_levels(snr))]); end
             
@@ -137,7 +152,7 @@ for n = size(nb_signals,1):size(nb_signals,1) %1:size(nb_signals,1)
             mMAE_grid(snr,n,f)      = nanmean(Estim.GridSearch.Errors.Mae);
             
             % Perform DBL
-            Estim   = AnalyzeMRImages(XtestN,DicoR,'DBL',Parameters,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+            Estim   = AnalyzeMRImages(XtestN,[],'DBL',Params,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
 
             %times
             t_gllim(snr,n,f)        = Estim.Regression.quantification_time;
@@ -148,6 +163,18 @@ for n = size(nb_signals,1):size(nb_signals,1) %1:size(nb_signals,1)
             mRMSE_gllim(snr,n,f)    = nanmean(Estim.Regression.Errors.Rmse);
             mMAE_gllim(snr,n,f)     = nanmean(Estim.Regression.Errors.Mae);
             
+            
+            % Perform DB-DL
+            if dbdl_computation == 1
+                Ynn     = EstimateParametersFromNNmodel(XtestN,NeuralNet);
+                Ynn     = (Ynn .* mx) + mn;
+                
+                %estimation accuracy
+                [tmp1,tmp2,tmp3]    = EvaluateEstimation(Ytest, Ynn);
+                mRMSE_nn(snr,n,f) 	= nanmean(tmp1);
+                mNRMSE_nn(snr,n,f)  = nanmean(tmp2);
+                mMAE_nn(snr,n,f)    = nanmean(tmp3);
+            end
             
 %             %memory requirement
 %             %other lines of the for loop can be ignored + parfor -> for
@@ -174,10 +201,13 @@ t(:,3,:,:)      = t_gllim_learn;
 %errors
 mNRMSE(:,1,:,:) = mNRMSE_grid;
 mNRMSE(:,2,:,:) = mNRMSE_gllim;
+mNRMSE(:,3,:,:) = mNRMSE_nn;
 mRMSE(:,1,:,:)  = mRMSE_grid;
 mRMSE(:,2,:,:)  = mRMSE_gllim;
+mRMSE(:,3,:,:)  = mRMSE_nn;
 mMAE(:,1,:,:)   = mMAE_grid;
 mMAE(:,2,:,:)   = mMAE_gllim;
+mMAE(:,3,:,:)   = mMAE_nn;
 
 
 %% Saving 
@@ -189,6 +219,7 @@ end
 
 
 %% Displaying
+
 
 nb_param_wted_v = [5 7];
 
@@ -211,12 +242,12 @@ for nb_param_wted = nb_param_wted_v
     
     nb_param_wted_ = find(nb_param == nb_param_wted);
     
-    ax(count) = subplot(2,2,count);
+    ax(count) = subplot(2,3,count);
     set(groot,'defaultAxesColorOrder',colors)
     hold on
     
     for f = 1:size(nb_signals,2) 
-        plot([0 200], [mRMSE(end,1,nb_param_wted_,f) mRMSE(end,1,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:))     
+        plot([1e-6 200], [mRMSE(end,1,nb_param_wted_,f) mRMSE(end,1,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:))     
         pp(f) = plot(real_snr(:,nb_param_wted_,f), mRMSE(:,1,nb_param_wted_,f), '.-', 'MarkerSize', 18, 'Color', colors(f,:));          
         
         axis tight;
@@ -228,16 +259,17 @@ for nb_param_wted = nb_param_wted_v
     switch count
         case 1
             title('DBM \newline (a)');
-        case 3
-            title('(c)');           
+        case 4
+            title('(d)');           
     end
     if count > 2, xlabel('SNR'); end
     ylabel([num2str(nb_param_wted) ' parameters\newline Average RMSE (s)'])
     
-    ax(count+1) = subplot(2,2,count+1);
+    
+    ax(count+1) = subplot(2,3,count+1);
     hold on
     for f = 1:size(nb_signals,2)
-        plot([0 200], [mRMSE(end,2,nb_param_wted_,f) mRMSE(end,2,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:),'HandleVisibility','off')        
+        plot([1e-6 200], [mRMSE(end,2,nb_param_wted_,f) mRMSE(end,2,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:),'HandleVisibility','off')        
         pp(f) = plot(real_snr(:,nb_param_wted_,f), mRMSE(:,2,nb_param_wted_,f), '.-', 'MarkerSize', 18, 'Color',colors(f,:));
         
         axis tight;
@@ -249,10 +281,32 @@ for nb_param_wted = nb_param_wted_v
     switch count
         case 1
             title('DBL \newline (b)');
-        case 3
-            title('(d)');
+        case 4
+            title('(e)');
     end
-    count = 3;
+    set(gca,'FontSize',16)
+    lgd.FontSize = 16;
+    
+    
+    ax(count+2) = subplot(2,3,count+2);
+    hold on
+    for f = 1:size(nb_signals,2)
+        plot([1e-6 200], [mRMSE(end,3,nb_param_wted_,f) mRMSE(end,3,nb_param_wted_,f)], '--', 'linewidth',1.5, 'Color',colors(f,:),'HandleVisibility','off')        
+        pp(f) = plot(real_snr(:,nb_param_wted_,f), mRMSE(:,3,nb_param_wted_,f), '.-', 'MarkerSize', 18, 'Color',colors(f,:));
+        
+        axis tight;
+        ylim([0 .25]);
+        xlim([11 105])
+    end
+    
+    if count > 2, xlabel('SNR'); end
+    switch count
+        case 1
+            title('NN \newline (c)');
+        case 4
+            title('(f)');
+    end
+    count = 4;
     
     set(gca,'FontSize',16)
     lgd.FontSize = 16;
@@ -260,9 +314,9 @@ for nb_param_wted = nb_param_wted_v
     legend([num2str(nb_signals(nb_param_wted_,:)') repelem('-signal dictionary',length(nb_signals(nb_param_wted_,:)),1)])
 end
 
-linkaxes(ax(1:2), 'xy')
-linkaxes(ax(3:4), 'xy')
-% set(ax,'XScale','log')
+linkaxes(ax(1:3), 'xy')
+linkaxes(ax(4:5), 'xy')
+%set(ax,'XScale','log')
 
 
 %% Supplementary figure
@@ -282,15 +336,27 @@ for n = 1:size(nb_signals,1)
             set(groot,'defaultAxesColorOrder',colors)
             
             hold on;
-            plot([0 200], [mRMSE(end,1,n,f) mRMSE(end,1,n,f)], '--', 'linewidth',1.5, 'Color',colors(1,:),'HandleVisibility','off')        
-            plot([0 200], [mRMSE(end,2,n,f) mRMSE(end,2,n,f)], '--', 'linewidth',1.5, 'Color',colors(2,:),'HandleVisibility','off')        
-        
+            plot([1e-6 200], [mRMSE(end,1,n,f) mRMSE(end,1,n,f)], '--', 'linewidth',1.5, 'Color',colors(1,:),'HandleVisibility','off')        
+            plot([1e-6 200], [mRMSE(end,2,n,f) mRMSE(end,2,n,f)], '--', 'linewidth',1.5, 'Color',colors(2,:),'HandleVisibility','off')        
+            if dbdl_computation == 1
+                plot([1e-6 200], [mRMSE(end,3,n,f) mRMSE(end,3,n,f)], '--', 'linewidth',1.5, 'Color',colors(3,:),'HandleVisibility','off')        
+            end
+            
             plot(real_snr(:,n,f), mRMSE(:,1,n,f), '.-', 'MarkerSize', 12, 'Color', colors(1,:))
             plot(real_snr(:,n,f), mRMSE(:,2,n,f), '.-', 'MarkerSize', 12, 'Color', colors(2,:))
+            if dbdl_computation == 1
+                plot(real_snr(:,n,f), mRMSE(:,3,n,f), '.-', 'MarkerSize', 12, 'Color', colors(3,:))
+            end
             
             axis tight;
 
-            if f ==  size(nb_signals,2) && n == 1, legend('DBM','DBL'); end
+            if f ==  size(nb_signals,2) && n == 1
+                if dbdl_computation == 1
+                    legend('DBM','DB-SL','DB-DL');
+                else
+                    legend('DBM','DBL');
+                end
+            end
             title([num2str(nb_signals(n,f)) ' signals']);
             if count == 1, ylabel([num2str(nb_param(n)) ' parameters \newline Average RMSE (s)']); end
             ylim([0 .21]);
@@ -305,7 +371,7 @@ for n = 1:size(nb_signals,1)
         if n == size(nb_signals,1), xlabel('SNR'); end
     end
 end
-% set(ax,'XScale','log')
+%set(ax,'XScale','log')
 
 
 %% Exporting figures
