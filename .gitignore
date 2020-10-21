@@ -1,0 +1,12 @@
+temp/*
+logs/*
+outputs/*
+tikz/*
+inputs/*
+
+temp*
+tmp_*
+temp_*
+test_*
+
+*.m~

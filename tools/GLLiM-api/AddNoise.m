@@ -13,13 +13,13 @@ narginchk(2, 3);
 if nargin == 2, verb = 0; end
 
 if ~any(imag(X) ~= 0)
-    X_noisy = abs(X + randn(size(X)) .* repmat(max(abs(X),[],2)./snr, 1,size(X,2)));
+    X_noisy = X + randn(size(X)) .* repmat(max(abs(X),[],2)./snr, 1,size(X,2));
     
     real_snr = max(X,[],2) ./ std(X - X_noisy, [],2);
     
 else
-    X_noisy = complex(real(X) + randn(size(X)) .* max(abs(X),[],2)./snr, ...
-                      imag(X) + randn(size(X)) .* max(abs(X),[],2)./snr);
+    X_noisy = complex(real(X) + randn(size(X)) .* max(real(X),[],2)./snr, ...
+                      imag(X) + randn(size(X)) .* max(imag(X),[],2)./snr);
                   
     real_snr = max(abs(X),[],2) ./ std(abs(X) - abs(X_noisy), [],2);
 end

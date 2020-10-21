@@ -78,7 +78,7 @@ if pSSFP
     end
 else
     TR = TR0;%repmat(TR0, [length(alpha) 1]);
-    TD = TR/2;
+    TD = TR/2; TD = 6e-3*ones(size(TR));
     TE = TD;
     TD(end) = 0;
     TE(1) = 0;

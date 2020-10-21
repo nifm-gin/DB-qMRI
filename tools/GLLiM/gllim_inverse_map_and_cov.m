@@ -1,4 +1,4 @@
-function [x_exp, cov, alpha] = gllim_inverse_map_and_cov(y,theta,verb)
+function [x_exp, cov, alpha, d2] = gllim_inverse_map_and_cov(y,theta,verb)
 %%%%%%%%%%%%%%%%% Inverse Mapping from Gllim Parameters %%%%%%%%%%%%%%%%%%%
 %%%% Author: Antoine Deleforge (July 2012) - antoine.deleforge@inria.fr %%%
 % Description: Map N observations y using the inverse conditional
@@ -77,4 +77,7 @@ x_exp = reshape(sum(bsxfun(@times,reshape(alpha,[1,N,K]),proj),3),L,N); %LxN
 cov_term = bsxfun(@times, reshape(alpha,[1,1,N,K]), cov_term);
 cov = bsxfun(@minus, reshape(sum(cov_term,4),[L,L,N]),...
          bsxfun(@times, reshape(x_exp,[1,L,N]), reshape(x_exp,[L,1,N])));
+     
+gm  = gmdistribution(theta.c', theta.Gamma);
+d2  = max(mahal(gm, x_exp') .* alpha, [],2);
 end

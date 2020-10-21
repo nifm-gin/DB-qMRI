@@ -1,4 +1,4 @@
-function [Yestim, Parameters, Cov, Kurt, Pik] = EstimateParametersFromRegression(Xtest, Xtrain, Ytrain, Ytest, Parameters)
+function [Yestim, Parameters, Cov, Kurt, Pik, Mahaldist] = EstimateParametersFromRegression(Xtest, Xtrain, Ytrain, Ytest, Parameters)
 
 if ~exist('Parameters','var')
     Parameters.maxiter     = 200;
@@ -37,7 +37,7 @@ if ~any(contains(fields(Parameters), 'K'))
 end
 
 
-if ~any(strcmp(fieldnames(Parameters),'theta'))
+if ~any(strcmp(fieldnames(Parameters), 'theta'))
     % Estimations
     Parameters.theta = EstimateInverseFunction(Ytrain, Xtrain, Parameters.K, Parameters.Lw, Parameters.maxiter, Parameters.cstr, 0);
 end
@@ -45,6 +45,6 @@ end
 if isempty(Xtest)
     Yestim = [];
 else
-    [Yestim, Cov, Kurt, Pik] = EstimateParametersFromModel(Xtest, Parameters.theta, 0);
+    [Yestim, Cov, Kurt, Pik, Mahaldist] = EstimateParametersFromModel(Xtest, Parameters.theta, 0);
 end
 

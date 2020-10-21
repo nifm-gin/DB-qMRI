@@ -101,25 +101,31 @@ switch Method
                 Yestim = nan(s1*s2,size(Parameters.theta.A,2));
                 Cov = nan(size(Parameters.theta.A,2),size(Parameters.theta.A,2),s1*s2);
                 Pik = nan(s1*s2,Parameters.K);
+                Mahaldist = nan(s1*s2,1);
                 
                 Param_updated = Parameters;
+                SNRMap(SNRMap < 2) = 2;
                 var_noise = (max(Sequences(:,:,:,s),[],3) ./ SNRMap(:,:,s)).^2;
                 
                 Nb_model = 20;
-                var_bounds = nanmin(var_noise(:)):(nanmax(var_noise(:))-nanmin(var_noise(:)))/Nb_model:nanmax(var_noise(:));
+%                 var_bounds = sort(1 ./ [2:100/Nb_model:102 inf].^2);
+                var_bounds = sort(1 ./ [2:50/(0.75*Nb_model):62 62:50/(0.25*Nb_model):122 inf].^2);
+%                var_bounds = sort(1 ./ logspace(1/3.4,2,Nb_model).^2);
                 for m = 1:length(var_bounds)-1
-                    if any(reshape( (var_noise(:,:,s) >= var_bounds(m)) & (var_noise(:,:,s) < var_bounds(m+1)) ,1,[]))
-                        var_noise = var_bounds(m) + (var_bounds(m+1) - var_bounds(m))/2;
-                        Param_updated.theta = updateSigma(Parameters.theta,var_noise);
+                    if any(reshape( (var_noise >= var_bounds(m)) & (var_noise < var_bounds(m+1)) ,1,[]))
+                        var_noise_ = var_bounds(m) + (var_bounds(m+1) - var_bounds(m))/2;
+                        Param_updated.theta = updateSigma(Parameters.theta,var_noise_);
 
-                        Sequences_in = Sequences(:,:,:,s) .* ( (var_noise(:,:,s) >= var_bounds(m)) & (var_noise(:,:,s) < var_bounds(m+1)) ) ;
+                        Sequences_in = Sequences(:,:,:,s) .* ( (var_noise >= var_bounds(m)) & (var_noise < var_bounds(m+1)) ) ;
                         Sequences_in(Sequences_in == 0) = nan;
-                        [Yestim_in,~,Cov_in,~,Pik_in] = ...
+                        [Yestim_in,~,Cov_in,~,~,Mahaldist_in] = ...
                             EstimateParametersFromRegression(reshape(Sequences_in(:,:,:),s1*s2,t), Dico{f}.MRSignals, Dico{f}.Parameters.Par, [], Param_updated);
 
                         Yestim = nansum(cat(3,Yestim,Yestim_in),3);
                         Cov = nansum(cat(4,Cov,Cov_in),4);
-                        Pik = nansum(cat(3,Pik,Pik_in),3);
+                        Mahaldist = nansum(cat(3,Mahaldist,Mahaldist_in),3);
+                        %Pik = nansum(cat(3,Pik,Pik_in),3);
+                        Pik = [];
                     end
                 end
                 warning('on')
@@ -133,7 +139,7 @@ switch Method
 %                     end
 %                 end
             else
-                [Yestim,~,Cov,~,Pik] = ...
+                [Yestim,~,Cov,~,Pik,Mahaldist] = ...
                     EstimateParametersFromRegression(reshape(Sequences(:,:,:,s),s1*s2,t), Dico{f}.MRSignals, Dico{f}.Parameters.Par, [], Parameters);
             end
             
@@ -141,14 +147,15 @@ switch Method
             if any(strcmp(fieldnames(Parameters),'factors')) && normalization == 1
                 Yestim(:,1:end-Parameters.Lw) = (Yestim(:,1:end-Parameters.Lw) .* Parameters.factors.Ystd) + Parameters.factors.Ymean;
             end
-            Estimation.Regression.Y(:,:,:,s)    = reshape(Yestim, s1,s2,[]);
+            Estimation.Regression.Y(:,:,:,s)    = reshape(Yestim(:,1:end-Parameters.Lw), s1,s2,[]);
             
             Cov  	= reshape(Cov,size(Cov,1),size(Cov,2),s1,s2);
+            Cov     = Cov(1:end-Parameters.Lw,1:end-Parameters.Lw,:,:); 
             for ss = 1:s1
                 for sss = 1:s2
                     if any(strcmp(fieldnames(Parameters),'factors')) && normalization == 1
                         Estimation.Regression.Cov(ss,sss,:,s)   = diag(Cov(:,:,ss,sss))';
-                        Estimation.Regression.Cov(ss,sss,1:end-Parameters.Lw,s) = squeeze(Estimation.Regression.Cov(ss,sss,1:end-Parameters.Lw,s))' .* Parameters.factors.Ystd.^2;
+                        Estimation.Regression.Cov(ss,sss,:,s) = squeeze(Estimation.Regression.Cov(ss,sss,:,s))' .* Parameters.factors.Ystd.^2;
                     else
                         Estimation.Regression.Cov(ss,sss,:,s)   = diag(Cov(:,:,ss,sss))';
                     end
@@ -156,6 +163,7 @@ switch Method
             end
             
             Estimation.Regression.Pik = Pik;
+            Estimation.Regression.Mahaldist = Mahaldist;
             
             %Remove outliers
             if ~isempty(Outliers)

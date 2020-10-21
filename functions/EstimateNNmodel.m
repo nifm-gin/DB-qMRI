@@ -1,23 +1,36 @@
-function [net] = EstimateNNmodel(Xtrain,Ytrain,verb)
+function [net] = EstimateNNmodel(Xtrain,Ytrain,verb,gpu_opt,Z,H)
+
+
+if ~exist('gpu_opt','var')
+    gpu_opt = 'auto';
+end
+
+if ~exist('Z','var') 
+    % Z = floor(2/3 * size(Xtrain,2)) + size(Ytrain,2);
+    Z = 100;
+end
+if ~exist('H','var') 
+    H = 6;
+end
 
 
 %% Create network layers
 
-% K = floor(2/3 * size(Xtrain,2)) + size(Ytrain,2);
-K = 300;
-
-layers = [
+layers = [sequenceInputLayer(size(Xtrain,2))];
     
-    sequenceInputLayer(size(Xtrain,2))
+for h = 1:H
     
-    fullyConnectedLayer(K)
-    tanhLayer%sigmoidLayer
+    layers = [layers 
+        
+        fullyConnectedLayer(Z)
+        reluLayer; %tanhLayer 
+    ];
+end
     
-    fullyConnectedLayer(K)
-    tanhLayer
+layers = [layers
     
     fullyConnectedLayer(size(Ytrain,2))
-    sigmoidLayer
+    %reluLayer; %sigmoidLayer
     
     regressionLayer
     ];
@@ -36,8 +49,9 @@ options = trainingOptions('adam', ...
     'InitialLearnRate',1e-4, ...
     'SquaredGradientDecayFactor',0.99, ...
     'MaxEpochs',2000, ...
-    'MiniBatchSize',512, ...
+    'MiniBatchSize',16, ...
     'Plots','none',...'training-progress', ...
+    'ExecutionEnvironment', gpu_opt,...
     'Verbose',verb); %false
 
 net = trainNetwork(Xtrain',Ytrain',layers,options);
