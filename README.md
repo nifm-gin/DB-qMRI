@@ -30,7 +30,7 @@ The quantification is achieved, running:
 ```matlab
 >> [Estimation, Parameters] = AnalyzeMRImages(Sequences, Dico, Method)
 ```
-where ```Sequences``` is a 3D or 4D matrix of observed MR signals (the third dimension is the time, others are spatial dimensions), ```Dico``` is a structure that represents the dictionary and ```Method``` is the strings ```'DBM'```, ```'DB-SL'``` or ```'DB-DL'``` to specify the method to use. The fields of ```Dico``` are ```Dico.MRSignals``` that is a 2D matrix of MR signals (second dimension is time) and ```Dico.Parameters.Par``` is a 2D matrix of parameters that match to the corresponding MR signals (second dimension is the parameter dimension). Then, note that the first dimensions of ```Dico.MRSignals``` and ```Dico.Parameters.Par``` must be equals.
+where ```Sequences``` is a 3D or 4D matrix of observed MR signals (the third dimension is the time, others are spatial dimensions), ```Dico``` is a structure that represents the dictionary and ```Method``` is the strings ```'DBM'```, ```'DB-SL'``` or ```'DB-DL'``` to specify the method to use. The fields of ```Dico``` are ```Dico.MRSignals``` that is a 2D matrix of MR signals (second dimension is time) and ```Dico.Parameters.Par``` is a 2D matrix of parameters(second dimension is the parameter dimension). Then, note that the first dimensions of ```Dico.MRSignals``` and ```Dico.Parameters.Par``` must be equals.
 
 ```Estimation``` and ```Parameters``` are structures. ```Estimation.Y``` is the matrix of parameter estimates.
 
