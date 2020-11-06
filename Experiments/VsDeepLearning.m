@@ -5,6 +5,10 @@
 %
 % Fabien Boux - 07/2020
 
+Init
+disp(['Running experiment ' mfilename '.m'])
+
+
 %% Setting
 
 % Execution settings
@@ -28,12 +32,6 @@ nb_test_signals = 10000;
 
 fast_limit = 500;
 snr_train = 60;
-
-
-%% Adding to path
-
-addpath(genpath('functions'))
-addpath(genpath('tools'))
 
 
 %% Start computation

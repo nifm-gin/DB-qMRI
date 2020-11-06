@@ -6,6 +6,9 @@
 %
 % Fabien Boux - 01/2020
 
+Init
+disp(['Running experiment ' mfilename '.m'])
+
 
 %% Setting
 
@@ -37,11 +40,6 @@ Parameters.Lw = 0;
 
 %% Creating data
 
-% Adding to path
-addpath(genpath('functions'))
-addpath(genpath('tools'))
-
-% Init
 mNRMSE1 = nan(length(snr_levels),size(nb_signals,1),size(nb_signals,2));
                    mRMSE1 = mNRMSE1; mMAE1 = mNRMSE1;
 mNRMSE2 = mNRMSE1; mRMSE2 = mNRMSE1; mMAE2 = mNRMSE1;

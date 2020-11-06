@@ -8,6 +8,9 @@
 %
 % Fabien Boux - 01/2020
 
+Init
+disp(['Running experiment ' mfilename '.m'])
+
 
 %% Setting
 
@@ -41,13 +44,8 @@ fast_limit = 500;
 dbdl_computation = 1;
 
 
-%% Creating data
+%% Init data
 
-% Adding to path
-addpath(genpath('functions'))
-addpath(genpath('tools'))
-
-% Init
 mNRMSE_grid  = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
 mRMSE_grid   = mNRMSE_grid; mMAE_grid = mNRMSE_grid; 
 mNRMSE_gllim = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));

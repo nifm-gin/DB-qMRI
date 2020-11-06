@@ -1,4 +1,12 @@
 
+
+
+Init
+disp(['Running experiment ' mfilename '.m'])
+
+
+%% Setting
+
 p = [1 2];
 
 K = 100;

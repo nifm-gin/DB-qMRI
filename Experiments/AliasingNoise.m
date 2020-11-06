@@ -1,25 +1,38 @@
 
-%clear
-addpath(genpath('functions'))
-addpath(genpath('inputs/vdspiral'))
+%% Description
+%
+% We investigate the impact of aliasing noise due to undersampling 
+% artifacts
+%
+% Fabien Boux - 11/2020
+
+Init
+disp('Running experiment AliasingNoise.m')
+
+% addpath(genpath('functions')) % some fils has to be add to the path (in
+% the project)
+% addpath(genpath('inputs/vdspiral'))
 
 display = 0;
-nn_exec = 'cpu';
-%load_model = [];
+backup  = 1;
+nn_exec = 'auto';
 
-rng(4);
+%rng(4);
+
 
 %% Settings
 
-FOV     = 0.28;
-res     = 128;
+FOV     = 0.28; %field of view (m)
+res     = 128;  %resolution
 
-nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
-nb_signals = [16^3 61^3]; %4096; 226981;
+nb_param = 3;   %number of parameters: 2 for T1 and T2 estimates, 
+                % and 3 for T1, T2 and Df estimates
+nb_signals = [16^3 61^3]; %correspond to: [4096 226981]
 
 
 %% Create phantom
 
+%generate mask
 [ref, support, mask] = define_phantom(FOV, res);
 
 if display == 1
@@ -30,13 +43,14 @@ if display == 1
     title('Labels')
 end
 
-T1 = nan(size(ref)); T1_ = (1000:400:3000) *1e-3; %(ms)
-T2 = nan(size(ref)); T2_ = (60:60:1000) *1e-3; %(ms)
-T1 = nan(size(ref)); T1_ = (1500:300:3000) *1e-3; %(ms)
-T2 = nan(size(ref)); T2_ = (60:60:1000) *1e-3; %(ms)
+%define Gaussian means for parameter values
+T1 = nan(size(ref)); T1_ = (1000:400:3000) *1e-3; %(s)
+T2 = nan(size(ref)); T2_ = (60:60:1000) *1e-3; %(s)
+T1 = nan(size(ref)); T1_ = (1500:300:3000) *1e-3; %(s)
+T2 = nan(size(ref)); T2_ = (60:60:1000) *1e-3; %(s)
 df = nan(size(ref));
 
-%relaxation times
+%generate T1 and T2 values
 u = unique(ref);
 u(u == 0) = [];
 for r = 1:numel(u)
@@ -47,8 +61,8 @@ T1 = T1 .* (1 + 1/8 * rand(size(T1)));
 T2 = T2 .* (1 + 1/2 * rand(size(T2)));
 
 
-%offresonance
-max_df = 100 *pi/180; % (rad)
+%generate off-resonance values
+max_df = 100 *pi/180; %(rad)
 df_ = -max_df:(2*max_df)/size(df,1):max_df;
 for i = 1:size(df,1)
     for j = 1:size(df,2)
@@ -311,6 +325,14 @@ for nb_interleaves = interleaves
 end
 
 
+%% Backup
+
+if backup == 1
+    clear X* Y* Acq Traj
+    save(['temp/temp_spiral-simplify_' date], '-v7.3')
+end
+
+
 %%
 
 display = 1;
@@ -421,9 +443,7 @@ end
 
 %%
 
-clear X* Y* Acq Traj
-save(['temp/temp_spiral-simplify_' date], '-v7.3')
 
-if display == 1
+if backup == 1
     savefig(fig, 'figures/temp_spiral-simplify')
 end

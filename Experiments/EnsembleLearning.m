@@ -1,13 +1,18 @@
 
-% Adding to path
-addpath(genpath('functions'))
-addpath(genpath('tools'))
+%% Description
+%
+% We investigate a combination of dictionary-based learning methods (ie 
+% DB-SL and DB-DL) for robust estimation
+%
+% Fabien Boux - 11/2020
 
-clear
-exec_nn = 'cpu';
+Init
+disp(['Running experiment ' mfilename '.m'])
 
 
 %%
+
+exec_nn = 'cpu';
 
 % Signal settings
 int     = [.01 1];

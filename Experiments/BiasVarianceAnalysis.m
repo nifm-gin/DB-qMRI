@@ -1,7 +1,16 @@
 
+
+
+Init
+disp(['Running experiment ' mfilename '.m'])
+
+
 %clear
 addpath(genpath('/home_eq/bouxfa/Code/Local/Experiments/Trajectories/functions'))
 addpath(genpath('/home_eq/bouxfa/Code/Local/Experiments/Trajectories/inputs/vdspiral'))
+
+
+%% Settings
 
 display = 0;
 nn_exec = 'cpu';
@@ -10,9 +19,6 @@ nn_exec = 'cpu';
 rng(4);
 
 backup = 1;
-
-
-%% Settings
 
 snr = 40;
 

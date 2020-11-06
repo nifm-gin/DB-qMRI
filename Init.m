@@ -18,8 +18,10 @@ project_root_path = project_root_path(1:end-4);
 
 %% Generate path
 
-addpath(genpath('functions'))
-addpath(genpath('tools'))
+addpath(project_root_path)
+addpath(genpath([project_root_path filesep 'functions']))
+addpath(genpath([project_root_path filesep 'tools']))
+addpath([project_root_path filesep 'Experiments'])
 
 
 %% Create required folders

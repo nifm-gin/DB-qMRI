@@ -9,6 +9,9 @@
 %
 % Fabien Boux - 01/2020
 
+Init
+disp(['Running experiment ' mfilename '.m'])
+
 
 %% Setting
 
@@ -45,10 +48,6 @@ snr_train = inf;
 
 
 %% Creating data
-
-% Adding to path
-addpath(genpath('functions'))
-addpath(genpath('tools'))
 
 % Expe rand ID
 Id      = randi(2^16,1);

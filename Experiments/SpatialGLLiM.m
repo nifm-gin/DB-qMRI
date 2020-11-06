@@ -1,8 +1,6 @@
 
-addpath(genpath('functions'))
-addpath(genpath('tools'))
-
-clear
+Init
+disp(['Running experiment ' mfilename '.m'])
 
 %%
 

@@ -1,9 +1,11 @@
 
+Init
+disp(['Running experiment ' mfilename '.m'])
 
+%%
 
-nn = @(p,s,z,h) (h-1)*(z.^2+z) + z*(s+1) +p*(z+1);
-
-gllim = @(p,s,k,l) k*(1 + p*(p+1) + s*(1+p)) +s;
+nn      = @(p,s,z,h) (h-1)*(z.^2+z) + z*(s+1) +p*(z+1);
+gllim   = @(p,s,k,l) k*(1 + p*(p+1) + s*(1+p)) +s;
 
 
 %%

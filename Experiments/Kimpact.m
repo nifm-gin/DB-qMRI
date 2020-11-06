@@ -11,6 +11,9 @@
 %
 % Fabien Boux - 01/2020
 
+Init
+disp(['Running experiment ' mfilename '.m'])
+
 
 %% Setting
 
@@ -41,10 +44,6 @@ snr_train  	= 60;
 
 
 %% Creating data
-
-% Adding to path
-addpath(genpath('functions'))
-addpath(genpath('tools'))
 
 % for c = 1:length(constraints)
 for c = 1:length(nb_params)

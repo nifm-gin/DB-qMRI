@@ -6,6 +6,9 @@
 %
 % Fabien Boux - 02/2020
 
+Init
+disp(['Running experiment ' mfilename '.m'])
+
 
 %% Setting
 
@@ -34,11 +37,6 @@ Parameters.Lw = 0;
 
 %% Creating data
 
-% Adding to path
-addpath(genpath('functions'))
-addpath(genpath('tools'))
-
-% Init
 pp_std = nan(length(snr_test),nb_param,nb_repetition);
 pp_err = pp_std; pp_err2 = pp_std; pp_std2 = pp_err2;
 
