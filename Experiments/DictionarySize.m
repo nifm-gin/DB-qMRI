@@ -115,13 +115,10 @@ for n = 1:size(nb_signals,1)
         end
         
         %learn models
-        [~,Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
+        [~,Params] = AnalyzeMRImages([],DicoR,'DB-SL',Parameters);
         
         if dbdl_computation == 1
-            mn      = min(DicoR{1}.Parameters.Par );
-            mx      = max(DicoR{1}.Parameters.Par  - mn);
-            YtrainNN = (DicoR{1}.Parameters.Par  - mn) ./ mx;
-            NeuralNet = EstimateNNmodel(DicoR{1}.MRSignals,YtrainNN,0,'auto',100,6);
+            [~,Params_nn] = AnalyzeMRImages([],DicoR,'DB-DL');
         end
         
         % Need to remove parfor loop for memory requirement computation
@@ -152,7 +149,7 @@ for n = 1:size(nb_signals,1)
             mMAE_grid(snr,n,f)      = nanmean(Estim.GridSearch.Errors.Mae);
             
             % Perform DBL
-            Estim   = AnalyzeMRImages(XtestN,[],'DBL',Params,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+            Estim   = AnalyzeMRImages(XtestN,[],'DB-SL',Params,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
 
             %times
             t_gllim(snr,n,f)        = Estim.Regression.quantification_time;
@@ -166,14 +163,12 @@ for n = 1:size(nb_signals,1)
             
             % Perform DB-DL
             if dbdl_computation == 1
-                Ynn     = EstimateParametersFromNNmodel(XtestN,NeuralNet);
-                Ynn     = (Ynn .* mx) + mn;
-                
+                Estim   = AnalyzeMRImages(XtestN,[],'DB-DL',Params_nn,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+
                 %estimation accuracy
-                [tmp1,tmp2,tmp3]    = EvaluateEstimation(Ytest, Ynn);
-                mRMSE_nn(snr,n,f) 	= nanmean(tmp1);
-                mNRMSE_nn(snr,n,f)  = nanmean(tmp2);
-                mMAE_nn(snr,n,f)    = nanmean(tmp3);
+                mRMSE_nn(snr,n,f) 	= nanmean(Estim.Regression.Errors.Rmse);
+                mNRMSE_nn(snr,n,f)  = nanmean(Estim.Regression.Errors.Nrmse);
+                mMAE_nn(snr,n,f)    = nanmean(Estim.Regression.Errors.Mae);
             end
             
 %             %memory requirement
