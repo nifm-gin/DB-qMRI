@@ -1,8 +1,15 @@
 function [Estimation, Model] = qDBSL(Sequences, Dico, References, Model, SNRmap)
 
+% Performed dictionary-based statistical learning (DB-SL) estimation using
+% a dictionary, see:
+% [Boux, Bayesian inverse regression for vascular magnetic resonance
+% fingerprinting, 2020]
+%
+% Fabien Boux - 11/2020
+
 % need to remove the outliers parameter
 
-if nargin < 2, error('Not enought input arguments'); end
+narginchk(2, 5);
 if ~exist('References','var'),  References  = []; end
 if ~exist('Model','var'),       Model       = []; end
 if ~exist('SNRmap','var'),      SNRmap      = []; end

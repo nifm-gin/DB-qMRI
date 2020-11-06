@@ -1,5 +1,9 @@
 function [Sequences,s1,s2,t,slices] = SequencesSizes(Sequences)
 
+% Fabien Boux - 11/2020
+
+narginchk(1, 1);
+
 % Identify the MRI data sizes
 switch length(size(Sequences))
     case 4
@@ -14,4 +18,5 @@ switch length(size(Sequences))
         slices      = 1;
     otherwise
         error('Invalid Sequences argument size')
+        
 end

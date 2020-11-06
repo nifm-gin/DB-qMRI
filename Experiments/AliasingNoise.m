@@ -210,7 +210,7 @@ for d = 1:numel(nb_signals)
         end 
         X       = (D.normalization.*D.magnetization).';
         X       = AddNoise(X, snr_train); 
-%         X       = AddSpiralNoise(X, snr_train); 
+%         X       = AddAliasingNoise(X, snr_train); 
         DicoR{1}.MRSignals = [real(X) imag(X)];
 %         DicoR{1}.MRSignals = real(X);
         DicoR{1}.Parameters.Par = Y(:,1:nb_param);
@@ -244,7 +244,7 @@ for nb_interleaves = interleaves
     disp(['Subsampling factor = ' num2str(nb_interleaves)])
     
     SNR = 1./(3*nb_interleaves-2)*100;
-    Irec = reshape(AddSpiralNoise(reshape(Iacq,[],size(Iacq,3)), SNR), size(Iacq,1),size(Iacq,2),size(Iacq,3));
+    Irec = reshape(AddAliasingNoise(reshape(Iacq,[],size(Iacq,3)), SNR), size(Iacq,1),size(Iacq,2),size(Iacq,3));
 
     imgrec{nb_interleaves,1} = Irec(:,:,5);
     imgrec{nb_interleaves,2} = Irec(:,:,140);

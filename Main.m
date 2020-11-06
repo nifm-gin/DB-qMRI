@@ -3,9 +3,12 @@
 %
 % The aim of this script is to run all the others and to produce numerical
 % experiment results that allow to illustrate the interest of the
-% dictionary-based learning (DBL) method.
+% dictionary-based statistical learning (DB-SL) method.
 %
 % Fabien Boux - 01/2020
+
+Init
+disp(['Running ' mfilename '.m'])
 
 
 %% Setting

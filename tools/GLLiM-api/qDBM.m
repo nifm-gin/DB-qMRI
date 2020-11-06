@@ -1,6 +1,15 @@
 function [Estimation] = qDBM(Sequences, Dico, References)
 
-if nargin < 2, error('Not enought input arguments'); end
+% Performed dictionary-based matching (DBM) estimation using
+% a dictionary, see:
+% [Boux, Bayesian inverse regression for vascular magnetic resonance
+% fingerprinting, 2020]
+% or original paper:
+% [Ma, Magnetic resonance fingerprinting, 2013]
+%
+% Fabien Boux - 11/2020
+
+narginchk(2, 3);
 if nargin < 3, References = []; end
 
 % Format MRI data in 3D or 4D matrices

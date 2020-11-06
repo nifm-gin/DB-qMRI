@@ -1,6 +1,15 @@
 function [Estimation, Model] = qDBDL(Sequences, Dico, References, Model)
 
-if nargin < 2, error('Not enought input arguments'); end
+% Performed dictionary-based deep learning (DB-DL) estimation using a
+% dictionary, see:
+% [Boux, Bayesian inverse regression for vascular magnetic resonance
+% fingerprinting, 2020]
+% or original paper:
+% [Cohen, MR fingerprinting deep reconstruction network (DRONE), 2018]
+%
+% Fabien Boux - 11/2020
+
+narginchk(2, 4);
 if ~exist('References','var'),  References  = []; end
 if ~exist('Model','var'),       Model       = []; end
 
