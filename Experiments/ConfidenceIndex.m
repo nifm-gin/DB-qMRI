@@ -58,7 +58,7 @@ for rep = 1:nb_repetition
     tmp_pp_std2 = [];
     tmp_pp_err2 = [];
     
-    for s = 1:length(snr_test)
+    parfor s = 1:length(snr_test)
         
         [Xtest_noisy, real_snr] = AddNoise(Xtest, snr_test(s));
         
