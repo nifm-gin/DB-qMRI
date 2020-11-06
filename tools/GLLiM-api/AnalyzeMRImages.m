@@ -21,10 +21,9 @@ switch Method
 end
 
 % Some formatting
-if isempty(Sequences), Sequences = Dico{1}.MRSignals; end
 if isempty(Model),	Model = struct(); end 
 if iscell(Dico), Dico = Dico{1}; end
-
+if isempty(Sequences), Sequences = Dico.MRSignals; end
 
 % Compute quantification
 switch Method
