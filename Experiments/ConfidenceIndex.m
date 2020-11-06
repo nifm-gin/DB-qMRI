@@ -21,18 +21,10 @@ int   	= [0.01 1];
 nb_param = 3;
 nb_train_signals = 10000;
 nb_test_signals  = 10000;
-snr_train = 60;
 snr_test = [20 30 40 60 100];
 
 % Experiment settings
 nb_repetition = 100;
-
-% Regression settings
-Parameters.K = 50;
-Parameters.cstr.Sigma  = 'd*';
-Parameters.cstr.Gammat = ''; 
-Parameters.cstr.Gammaw = '';
-Parameters.Lw = 0;
 
 
 %% Creating data
@@ -43,45 +35,34 @@ pp_err = pp_std; pp_err2 = pp_std; pp_std2 = pp_err2;
 
 %% Processing
 
-parfor rep = 1:nb_repetition
+for rep = 1:nb_repetition
     
     if verbose == 1, disp([num2str(rep) '/' num2str(nb_repetition)]); end
     
+    % Initialize the weight of the function between parameters and signals
     p   = [.01 .01];
     while min(abs(pdist(p',@(x,y) x-y))) < .1
         p   = 0.1 + 0.9*rand(1,5);
     end
 
-    % Generate training signals
-    Xtrain  = [];
-    Ytrain	= int(1) + (int(2)-int(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb_train_signals);
-    for sim = 1:size(Ytrain,1)
-        Xtrain(sim,:) = toyMRsignal(Ytrain(sim,:),p(1:nb_param));
-    end
+    % Generate dataset: train/test signals
+    [Xtrain, Ytrain] = GenerateScalableSignals(p(1:nb_param), int, nb_train_signals, 'qRandom');
+    [Xtest,  Ytest]  = GenerateScalableSignals(p(1:nb_param), int, nb_test_signals, 'Random');
 
-    % Generate test signals
-    Xtest   = [];
-    Ytest	= int(1) + (int(2)-int(1)) * rand(nb_test_signals,nb_param);
-    for sim = 1:size(Ytest,1)
-        Xtest(sim,:) = toyMRsignal(Ytest(sim,:),p(1:nb_param));
-    end
-
-    % GlliM learning
-    Dico = [];
-    [Dico{1}.MRSignals, real_snr_train] = AddNoise(Xtrain, snr_train);
-    Dico{1}.Parameters.Par  = Ytrain;
-    [~,Params]  = AnalyzeMRImages(Xtrain,Dico,'DBL',Parameters);
+    % DB-SL learning
+    [~,Params]  = AnalyzeMRImages(Xtrain, FormatDico(Xtrain, Ytrain), 'DB-SL');
     
     % Estimates
-    tmp_pp_std = [];
-    tmp_pp_err = [];
+    tmp_pp_std  = [];
+    tmp_pp_err  = [];
     tmp_pp_std2 = [];
     tmp_pp_err2 = [];
+    
     for s = 1:length(snr_test)
         
         [Xtest_noisy, real_snr] = AddNoise(Xtest, snr_test(s));
         
-        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params);
+        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DB-SL', Params);
         Ygllim  = squeeze(Estim.Regression.Y(:,1:nb_param));
         Cov     = squeeze(Estim.Regression.Cov);
         Rmse    = EvaluateEstimation(Ytest, Ygllim);
@@ -91,8 +72,8 @@ parfor rep = 1:nb_repetition
         
         Params_updt = Params;
         var_noise = mean((max(Xtest,[],2) ./ real_snr).^2);
-        Params_updt.theta = updateSigma(Params.theta, var_noise);
-        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params_updt);
+        Params_updt.theta = UpdateSigma(Params.theta, var_noise);
+        Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DB-SL', Params_updt);
         
         %this line is equivalent to the previous implementation since it
         %corresponds to the integration in our estimation function of the

@@ -14,6 +14,12 @@ if ~exist('References','var'),  References  = []; end
 if ~exist('Model','var'),       Model       = []; end
 if ~exist('SNRmap','var'),      SNRmap      = []; end
 
+% Model setting
+if ~any(strcmp(fieldnames(Model),'K')),     Model.K = 50; end
+if ~any(strcmp(fieldnames(Model),'Lw')),    Model.Lw = 0; end
+if ~any(strcmp(fieldnames(Model),'cstr')),  Model.cstr.Sigma  = 'd*'; end
+if ~any(strcmp(fieldnames(Model),'snrtrain')), Model.snrtrain = 60; end
+
 % Format MRI data in 3D or 4D matrices
 [Sequences,s1,s2,t,slices] = SequencesSizes(Sequences);
 if ~isempty(References) && length(size(References))== 2
@@ -40,8 +46,10 @@ if ~any(strcmp(fieldnames(Model),'theta'))
         Model.factors.Ystd = 1;
         Model.factors.normalization = 0;
     end
-
-    Xtrain = Dico.MRSignals;
+    
+    % Add noise to trainning signal (default 60)
+    Xtrain = AddNoise(Dico.MRSignals, Model.snrtrain);
+    
     [~,Model] = EstimateParametersFromRegression(Xtrain, Xtrain, Dico.Parameters.Par, Dico.Parameters.Par, Model);
 
 else

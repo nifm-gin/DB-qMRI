@@ -1,6 +1,8 @@
 function [Estimation, Model] = AnalyzeMRImages(Sequences,Dico,Method,Model,References,outliers,SNRmap)
 
-if nargin < 3, error('Not enought input arguments'); end
+% Fabien Boux - 11/2020
+
+narginchk(2, 7);
 if ~exist('Method','var'),      Method      = 'DB-SL'; end
 if ~exist('Model','var'),       Model       = []; end
 if ~exist('References','var'),  References  = []; end

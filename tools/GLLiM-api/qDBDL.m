@@ -44,6 +44,13 @@ if ~any(strcmp(fieldnames(Model),'NeuralNet'))
         Model.factors.normalization = 0;
     end
     
+    % Add noise to trainning signal (default 60)
+    if ~any(strcmp(fieldnames(Model),'snrtrain'))
+        Xtrain = AddNoise(Dico.MRSignals, 60);
+    else
+        Xtrain = AddNoise(Dico.MRSignals, Model.snrtrain);
+    end
+    
     Model.NeuralNet = EstimateNNmodel(Dico.MRSignals, Dico.Parameters.Par, 0, Model.Exec, Model.Z, Model.H);
 end
 Estimation.Regression.learning_time = toc; 
