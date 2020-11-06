@@ -1,5 +1,4 @@
 
-
 %% Description
 %
 % The DBL method estimates the parameters using a continuous function that
@@ -35,98 +34,99 @@ constraints = {'d*'}; %{'i*','i','d*','d',''};
 nb_params = [3 4 5 7];
 
 % Regression settings
-Parameters = [];
-Parameters.cstr.Sigma  = '';
+Model.Lw = 0;
 Parameters.cstr.Gammat = ''; 
 Parameters.cstr.Gammaw = '';
-Parameters.Lw = 0;
-snr_train  	= 60;
+Model.maxiter = 250;
+Model.snrtrain = 60;
 
 
 %% Creating data
 
-% for c = 1:length(constraints)
-for c = 1:length(nb_params)
-    
-    nb_param = nb_params(c);
-    Parameters.cstr.Sigma = constraints{1};
+Err = struct(length(nb_params),length(constraints));
+Bic = struct(length(nb_params),length(constraints));
 
-    
-    Xtrain = []; Ytrain = [];
-    Ytrain  	= int(1) + (int(2) - int(1)) * net(scramble(sobolset(nb_param),'MatousekAffineOwen'),nb_train_signals);
-    parfor sim = 1:size(Ytrain,1)
-        Xtrain(sim,:) = toyMRsignal(Ytrain(sim,:),p(1:nb_param));
-    end
-    DicoR = [];
-    DicoR{1}.MRSignals = AddNoise(abs(Xtrain), snr_train); 
-    DicoR{1}.Parameters.Par = Ytrain;
+for c1 = 1:length(constraints)
+    for c2 = 1:length(nb_params)
 
-    Ytest       = int(1) + (int(2) - int(1)) * rand(nb_test_signals,nb_param);
-    Xtest = [];
-    parfor sim = 1:size(Ytest,1)
-        Xtest(sim,:) = toyMRsignal(Ytest(sim,:),p(1:nb_param));
-    end
-    Xtest = AddNoise(Xtest, 100);
-    
-    Rmse    = zeros(length(K), size(Ytrain,2));
-    bic     = zeros(1,length(K));
-    [N,Lt]  = size(Ytrain);
-    D       = size(Xtrain,2);
-    
-    
-    for k = 1:length(K)
+        % Choose number of parameters and constrint on covariance matrices
+        nb_param = nb_params(c2);
+        Model.cstr.Sigma = constraints{c1};
 
-        disp(k)
+        % Generate training dataset
+        [Xtrain, Ytrain] = GenerateScalableSignals(p(1:nb_param), int, nb_train_signals, 'qRandom');
+        [Xtest,  Ytest]  = GenerateScalableSignals(p(1:nb_param), int, nb_test_signals, 'Random');
         
-        try
-            [theta,~,ll]	= EstimateInverseFunction(Ytrain, Xtrain, K(k), Parameters.Lw, 200, Parameters.cstr, 0);
-            Ypredict	= EstimateParametersFromModel(Xtest, theta, 0);
+        % Add noise
+        Xtrain  = AddNoise(Xtrain, Model.snrtrain);
+        Xtest   = AddNoise(Xtest, 50);
 
-            Rmse(k,:) = EvaluateEstimation(Ytest, Ypredict);
+        % Init
+        Rmse    = nan(length(K), size(Ytrain,2));
+        bic     = nan(1,length(K));
+        [N,Lt]  = size(Ytrain);
+       	Lw      = Model.Lw;
+        D       = size(Xtrain,2);
 
-            Lw = Parameters.Lw;
-            switch Parameters.cstr.Sigma
-                case 'i*'
-                    M = K(k)* (D*(Lw+Lt+1)     + Lt*(Lt+3)/2 + 1);
-                case 'i'
-                    M = K(k)* (D*(Lw+Lt+1)     + Lt*(Lt+3)/2 + 1)  + K(k)-1;
-                case 'd*'
-                    M = K(k)* (D*(Lw+Lt+2)     + Lt*(Lt+3)/2) + D  + K(k)-1;
-                case 'd'
-                    M = K(k)* (D*(Lw+Lt+2)     + Lt*(Lt+3)/2)      + K(k)-1;
-                otherwise
-                    M = K(k)* (D*(Lw+Lt+D+1)   + Lt*(Lt+3)/2)      + K(k)-1;
+        % Start evaluating K impact
+        parfor k = 1:length(K)
+            disp(k)
+
+            try
+                [theta,~,ll] = EstimateInverseFunction(Ytrain, Xtrain, K(k), Model.Lw, Model.maxiter, Model.cstr, 0);
+                Ypredict	= EstimateParametersFromModel(Xtest, theta, 0);
+
+                Rmse(k,:)   = EvaluateEstimation(Ytest, Ypredict);
+
+                switch Model.cstr.Sigma
+                    case 'i*'
+                        M = K(k)* (D*(Lw+Lt+1)     + Lt*(Lt+3)/2 + 1);
+                    case 'i'
+                        M = K(k)* (D*(Lw+Lt+1)     + Lt*(Lt+3)/2 + 1)  + K(k)-1;
+                    case 'd*'
+                        M = K(k)* (D*(Lw+Lt+2)     + Lt*(Lt+3)/2) + D  + K(k)-1;
+                    case 'd'
+                        M = K(k)* (D*(Lw+Lt+2)     + Lt*(Lt+3)/2)      + K(k)-1;
+                    otherwise
+                        M = K(k)* (D*(Lw+Lt+D+1)   + Lt*(Lt+3)/2)      + K(k)-1;
+                end
+
+                bic(k) = -2*ll + M*log(N);
+            
+            catch
+                warning(['Iteration ' Model.cstr.Sigma '/' num2str(nb_param) '/' num2str(K(k)) ' failed'])
             end
-
-            bic(k) = -2*ll + M*log(N);
         end
+
+        Err{c2,c1}  = mean(Rmse,2);
+        Bic{c2,c1}  = bic;
     end
-    
-    Err{c}  = mean(Rmse,2);
-    Bic{c}  = bic;
+end
+
+
+%% Backup
+
+if backup == 1
+    clear tmp* Dico* Estim X* Y*
+    save(['temp/' 'Kimpact'])
 end
 
 
 %% Disp
 
 fig = figure;
-% subplot(121)
 hold on
-%for c = 1:length(constraints)
-for c = 1:length(nb_params)
-    plot(K, mean(Err{c},2), '.-', 'linewidth',1.5);
+for c1 = 1:length(constraints)
+    subplot(1,length(constraints),c1)
+    
+    for c2 = 1:length(nb_params)
+        plot(K, mean(Err{c2,c1},2), '.-', 'linewidth',1.5);
+        %plot(K, mean(Dic{c2,c1},2), '.-', 'linewidth',1.5);
+    end
 end
 ylabel('Mean RMSE')
+%ylabel('BIC')
 xlabel('K')
-
-% subplot(122)
-% hold on
-% % for c = 1:length(constraints)
-% for c = 1:length(nb_params)
-%     plot(K, Bic{c}, '.-', 'linewidth',1.5)
-% end
-% title('BIC')
-% % legend(constraints')
 legend([repelem('P = ',length(nb_params),1) num2str(nb_params')])
 
 
@@ -135,5 +135,3 @@ legend([repelem('P = ',length(nb_params),1) num2str(nb_params')])
 if backup == 1
     savefig(fig, ['figures/' 'Kimpact'])
 end
-
-save('temp_Kimpact')

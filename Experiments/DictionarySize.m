@@ -32,12 +32,11 @@ snr_levels = [logspace(1, 2.035, 39) inf];
 nb_test_signals = 10000;
 
 % Regression settings
-Parameters = [];
 K = 100;
-Parameters.cstr.Sigma  = 'd*';
-Parameters.cstr.Gammat = ''; 
-Parameters.cstr.Gammaw = '';
-Parameters.Lw = 0;
+Model.cstr.Sigma  = 'd*';
+Model.cstr.Gammat = ''; 
+Model.cstr.Gammaw = '';
+Model.Lw = 0;
 snr_train = 60;
 
 fast_limit = 500;
@@ -105,15 +104,15 @@ for n = 1:size(nb_signals,1)
         end
         
         if nb_signals(n,f) > fast_limit
-            Parameters.K = K;
+            Model.K = K;
         elseif (nb_signals(n,f) > 100) && (nb_signals(n,f) <= fast_limit)
-            Parameters.K = 30;
+            Model.K = 30;
         else
-            Parameters.K = 10;
+            Model.K = 10;
         end
         
         %learn models
-        [~,Params] = AnalyzeMRImages([],DicoR,'DB-SL',Parameters);
+        [~,Params] = AnalyzeMRImages([],DicoR,'DB-SL',Model);
         
         if dbdl_computation == 1
             [~,Params_nn] = AnalyzeMRImages([],DicoR,'DB-DL');

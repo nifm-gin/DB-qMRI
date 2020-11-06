@@ -39,7 +39,7 @@ snr_test = inf;
 % Method settings
 methods = {'DBM','DB-SL'};
 sampling_strategies = {'Grid', 'Random', 'qRandom'};
-Parameters.snrtrain = inf;
+Model.snrtrain = inf;
 
 
 %% Creating data
@@ -103,7 +103,7 @@ for exp = 1:length(signals) % for all experiments
                 if any(contains(methods,'DB-SL'))
                     
                     tic;
-                    Estim 	= AnalyzeMRImages(Xtest,Dico,'DBL',Parameters,Ytest(:,1:size(Y,2)));
+                    Estim 	= AnalyzeMRImages(Xtest,Dico,'DBL',Model,Ytest(:,1:size(Y,2)));
                     t_DBL(s,rep)        = toc;
                     
                     mRMSE_DBL(s,rep)    = mean(Estim.Regression.Errors.Rmse);
