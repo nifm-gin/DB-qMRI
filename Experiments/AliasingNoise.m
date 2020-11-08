@@ -9,28 +9,27 @@
 Init
 disp('Running experiment AliasingNoise.m')
 
-% addpath(genpath('functions')) % some fils has to be add to the path (in
-% the project)
-% addpath(genpath('inputs/vdspiral'))
-
-display = 0;
-backup  = 1;
-nn_exec = 'auto';
-
-%rng(4);
-
 
 %% Settings
 
-FOV     = 0.28; %field of view (m)
-res     = 128;  %resolution
+display = 0; %for intermediate figures
+backup  = 1;
 
 nb_param = 3;   %number of parameters: 2 for T1 and T2 estimates, 
                 % and 3 for T1, T2 and Df estimates
 nb_signals = [16^3 61^3]; %correspond to: [4096 226981]
+S       = 1000;
+
+%model settings
+Model_.K = 100;
+%one can specify a file of previous saved models, else empty
+load_model = [];
 
 
 %% Create phantom
+
+FOV     = 0.28; %field of view (m)
+res     = 128;  %resolution
 
 %generate mask
 [ref, support, mask] = define_phantom(FOV, res);
@@ -91,26 +90,23 @@ end
 % From Dan Ma's paper:
 
 %simulation settings
-sd  = 2;
-FA      = (pi/180)* [90 ...
+sd      = 2; %standard deviation for FA
+FA      = (pi/180)* [90 ... %Flip anglas (rad)
            10 + 50 *sin((2*pi/500) *(1:250)) + sd*randn(1,250) ...
            zeros(1,50) ...
            (10 + 50 *sin((2*pi/500) *(1:250)) + sd*randn(1,250)) /2 ...
            zeros(1,50) ...
            10 + 50 *sin((2*pi/500) *(1:250)) + sd*randn(1,250) ...
            zeros(1,50) ...
-           (10 + 50 *sin((2*pi/500) *(1:99)) + sd*randn(1,99)) /2]; % Flip angles (rad)
+           (10 + 50 *sin((2*pi/500) *(1:99)) + sd*randn(1,99)) /2]; % Flip angles
 
 TR      = perlin(length(FA)+100); TR = TR(1,:); % Repetition Time (sec)
 TR      = filter(gausswin(50),1,TR);
 TR      = TR(51:1050);
 TR  =    1e-3 * (10.5 + 3.5* (TR - min(TR)) ./ max(TR - min(TR)));
 
-S       = 1000;
-sub     = 1;
-TR      = TR(1:sub:S*sub);
-FA      = FA(1:sub:S*sub);
-
+TR      = TR(1:S);
+FA      = FA(1:S);
 %load('inputs/patterns.mat', 'FA','TR')
 
 %img settings
@@ -125,9 +121,9 @@ end
 Xacq    = (Acq.normalization.*Acq.magnetization).';
 Iref    = reshape(Xacq, N,N, length(TR));
 
-%add noise
 Xacq(any(isnan(Xacq)'),:) = 0;
-% snr     = 60;
+
+% no thermal noise added
 % Xacq    = AddNoise(Xacq, snr);
 
 %generate images
@@ -160,14 +156,6 @@ interleaves = [1 2:2:50];
 
 %% Dico generation & Regression training
 
-Parameters.K = 100;
-Parameters.cstr.Sigma  = 'd*';
-Parameters.cstr.Gammat = ''; 
-Parameters.cstr.Gammaw = '';
-Parameters.Lw = 0;
-Parameters.maxiter = 250;
-snr_train = 60;
-
 int_T1  = 1e-3 * [200 3000];	% between 20 and 3000 ms
 int_T2  = 1e-3 * [20  300];    % between 20 and 3000 ms
 int_df  = pi/180 * [-200 200];  % +/- 400 Hz
@@ -191,9 +179,7 @@ for d = 1:numel(nb_signals)
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end
     X       = (D.normalization.*D.magnetization).';
-    DicoG{d}.MRSignals = X; 
-    DicoG{d}.Parameters.Par = Y(:,1:nb_param);
-
+    Dico_DBM{d} = FormatDico(X, Y(:,1:nb_param));
     disp('Dictionary for matching generated')
     
     if isempty(load_model)
@@ -209,28 +195,18 @@ for d = 1:numel(nb_signals)
             D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
         end 
         X       = (D.normalization.*D.magnetization).';
-        X       = AddNoise(X, snr_train); 
-%         X       = AddAliasingNoise(X, snr_train); 
-        DicoR{1}.MRSignals = [real(X) imag(X)];
-%         DicoR{1}.MRSignals = real(X);
-        DicoR{1}.Parameters.Par = Y(:,1:nb_param);
-
+        Dico_DBL = FormatDico([real(X) imag(X)], Y(:,1:nb_param));
         disp('Dictionary for learning generated')
 
-        if size(DicoG{d}.MRSignals,1) ~= size(DicoR{1}.MRSignals,1)
+        if size(Dico_DBM{d}.MRSignals,1) ~= size(Dico_DBL.MRSignals,1)
             warning('Sizes are not equals')
         end
 
         % Learn models
-        [~, Params{d}] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
-
+        [~, Model{d}] = AnalyzeMRImages([],Dico_DBL,'DB-SL',Model_);
         disp('DB-SL model learnt')
 
-        mn{d}   = min(DicoR{1}.Parameters.Par );
-        mx{d}   = max(DicoR{1}.Parameters.Par  - mn{d});
-        YtrainNN = (DicoR{1}.Parameters.Par  - mn{d}) ./ mx{d};
-        NeuralNet{d} = EstimateNNmodel(DicoR{1}.MRSignals,YtrainNN,0,nn_exec,100,6);
-
+        [~, NeuralNet{d}] = AnalyzeMRImages([],Dico_DBL,'DB-DL',Model_);
         disp('DB-DL model learnt')
     end
 end
@@ -246,13 +222,14 @@ for nb_interleaves = interleaves
     SNR = 1./(3*nb_interleaves-2)*100;
     Irec = reshape(AddAliasingNoise(reshape(Iacq,[],size(Iacq,3)), SNR), size(Iacq,1),size(Iacq,2),size(Iacq,3));
 
-    imgrec{nb_interleaves,1} = Irec(:,:,5);
-    imgrec{nb_interleaves,2} = Irec(:,:,140);
-    imgrec{nb_interleaves,3} = Irec(:,:,430);
-    sigrec{nb_interleaves,1} = squeeze(Irec(61,31,:));
-    sigrec{nb_interleaves,2} = squeeze(Irec(52,37,:));
-    sigrec{nb_interleaves,3} = squeeze(Irec(65,51,:));
-
+    if S >= 430
+        imgrec{nb_interleaves,1} = Irec(:,:,5);
+        imgrec{nb_interleaves,2} = Irec(:,:,140);
+        imgrec{nb_interleaves,3} = Irec(:,:,430);
+        sigrec{nb_interleaves,1} = squeeze(Irec(61,31,:));
+        sigrec{nb_interleaves,2} = squeeze(Irec(52,37,:));
+        sigrec{nb_interleaves,3} = squeeze(Irec(65,51,:));
+    end
     
     if display == 1
         figure
@@ -303,24 +280,23 @@ for nb_interleaves = interleaves
     for d = 1:numel(nb_signals)
         
         % Perform DBM
-        Dic{1} = DicoG{d};
+        Dic{1} = Dico_DBM{d};
         Estim   = AnalyzeMRImages(Xtest,Dic,'DBM',[],Ytest(:,1:nb_param));
 
         RMSE_grid(c,:,d)	= Estim.GridSearch.Errors.Rmse;
         MAE_grid(c,:,d) 	= Estim.GridSearch.Errors.Mae;
 
         % Perform DBSL
-        Estim   = AnalyzeMRImages([real(Xtest) imag(Xtest)],[],'DBL',Params{d},Ytest(:,1:nb_param));
-%         Estim   = AnalyzeMRImages(real(Xtest),[],'DBL',Params{d},Ytest(:,1:nb_param));
+        Estim   = AnalyzeMRImages([real(Xtest) imag(Xtest)],[],'DB-SL',Model{d},Ytest(:,1:nb_param));
 
         RMSE_gllim(c,:,d)  = Estim.Regression.Errors.Rmse;
         MAE_gllim(c,:,d)   = Estim.Regression.Errors.Mae;
         
         % Perform DBDL
-        Ynn     = EstimateParametersFromNNmodel([real(Xtest) imag(Xtest)],NeuralNet{d});
-%         Ynn     = EstimateParametersFromNNmodel(real(Xtest),NeuralNet{d});
-        Ynn     = (Ynn .* mx{d}) + mn{d};
-        [RMSE_nn(c,:,d),~,MAE_nn(c,:,d)] = EvaluateEstimation(Ytest(:,1:nb_param),Ynn);
+        Estim   = AnalyzeMRImages([real(Xtest) imag(Xtest)],[],'DB-DL',NeuralNet{d},Ytest(:,1:nb_param));
+
+        RMSE_nn(c,:,d)      = Estim.Regression.Errors.Rmse;
+        MAE_nn(c,:,d)       = Estim.Regression.Errors.Mae;
     end
 end
 
@@ -328,38 +304,35 @@ end
 %% Backup
 
 if backup == 1
-    clear X* Y* Acq Traj
-    save(['temp/temp_spiral-simplify_' date], '-v7.3')
+    clear X* Y* Dico* Acq Traj 
+    save(['temp/' 'AlisasingNoise'])
 end
 
 
 %%
+    
+colors = [          0    0.4470    0.7410
+            0.8500    0.3250    0.0980
+            0.9290    0.6940    0.1250
+            0.4940    0.1840    0.5560
+            0.4660    0.6740    0.1880
+            0.3010    0.7450    0.9330
+            0.6350    0.0780    0.1840];
 
-display = 1;
+fig = figure;
+subplot(545)
+plot(FA *180/pi); ylabel('FA (degrees)')
+ylim([0 90])
+subplot(549)
+plot(TR*1e3); ylabel('TR (ms)')
+ylim([10 14.5])
+xlabel('Repetitions') 
 
-if display == 1
-    
-    colors = [          0    0.4470    0.7410
-                0.8500    0.3250    0.0980
-                0.9290    0.6940    0.1250
-                0.4940    0.1840    0.5560
-                0.4660    0.6740    0.1880
-                0.3010    0.7450    0.9330
-                0.6350    0.0780    0.1840];
-    
-    fig = figure;
-    subplot(545)
-    plot(FA *180/pi); ylabel('FA (degrees)')
-    ylim([0 90])
-    subplot(549)
-    plot(TR*1e3); ylabel('TR (ms)')
-    ylim([10 14.5])
-    xlabel('Repetitions') 
-    
-    
-    sig = 2;
-    subsampling_factors = [8 16 48];
-    
+
+sig = 2;
+subsampling_factors = [8 16 48];
+
+if S >= 430
     img = 1;
     bds = [0 0.7];
     subplot(4,4,10);
@@ -367,83 +340,81 @@ if display == 1
     plot(abs(sigrec{subsampling_factors(1),sig}))
     plot(abs(sigrec{1,sig}))
     ylim([0 1])
-    
+
     subplot(4,4,11);
     hold on
     plot(abs(sigrec{subsampling_factors(2),sig}))
     plot(abs(sigrec{1,sig}))
     ylim([0 1])
-    
+
     subplot(4,4,12);
     hold on
     plot(abs(sigrec{subsampling_factors(3),sig}))
     plot(abs(sigrec{1,sig}))
     ylim([0 1])
-    
-    
-    subplot(4,4,14);
-    hold on   
-    plot(interleaves, RMSE_grid(:,1,1)  *1e3, '.-', 'Color', colors(1,:))
-    plot(interleaves, RMSE_gllim(:,1,1) *1e3, '.-', 'Color', colors(2,:))
-    plot(interleaves, RMSE_nn(:,1,1) *1e3,    '.-', 'Color', colors(3,:))
-    plot(interleaves, RMSE_grid(:,1,2)  *1e3, 'o-', 'Color', colors(1,:))
-    plot(interleaves, RMSE_gllim(:,1,2) *1e3, 'o-', 'Color', colors(2,:))
-    plot(interleaves, RMSE_nn(:,1,2) *1e3,    'o-', 'Color', colors(3,:))
-    ylim([0 800])
-    title('T1 (ms)')
-
-    subplot(4,4,15);
-    hold on
-    plot(interleaves, RMSE_grid(:,2,1)  *1e3, '.-', 'Color', colors(1,:))
-    plot(interleaves, RMSE_gllim(:,2,1) *1e3, '.-', 'Color', colors(2,:))
-    plot(interleaves, RMSE_nn(:,2,1) *1e3,    '.-', 'Color', colors(3,:))
-    plot(interleaves, RMSE_grid(:,2,2)  *1e3, 'o-', 'Color', colors(1,:))
-    plot(interleaves, RMSE_gllim(:,2,2) *1e3, 'o-', 'Color', colors(2,:))
-    plot(interleaves, RMSE_nn(:,2,2) *1e3,    'o-', 'Color', colors(3,:))
-    ylim([0 200])
-    title('T2 (ms)')
-
-    if nb_param == 3
-        subplot(4,4,16);
-        hold on
-        plot(interleaves, RMSE_grid(:,3,1)  *180/pi, '.-', 'Color', colors(1,:))
-        plot(interleaves, RMSE_gllim(:,3,1) *180/pi, '.-', 'Color', colors(2,:))
-        plot(interleaves, RMSE_nn(:,3,1) *180/pi,    '.-', 'Color', colors(3,:))
-        plot(100,1,'k.')
-        plot(100,1,'ko')
-        plot(interleaves, RMSE_grid(:,3,2)  *180/pi, 'o-', 'Color', colors(1,:))
-        plot(interleaves, RMSE_gllim(:,3,2) *180/pi, 'o-', 'Color', colors(2,:))
-        plot(interleaves, RMSE_nn(:,3,2) *180/pi,    'o-', 'Color', colors(3,:))
-        ylim([0 100])
-        xlim([0 50])
-        title('df (Hz)')
-    end
-    legend('DBM', 'DB-SL', 'DB-DL', ['N = ' num2str(nb_signals(1))], ['N = ' num2str(nb_signals(2))])
-    
-    
-    h(2) = subplot(442);
-    imagesc(1e3*T1)
-    colormap(h(2), hot)
-    colorbar
-    axis image; axis off
-    
-    h(3) = subplot(443);
-    imagesc(1e3*T2)
-    colormap(h(3), hot)
-    colorbar
-    axis image; axis off
-    
-    h(4) = subplot(444);
-    imagesc(df*180/pi)
-    colormap(h(4), hot)
-    colorbar
-    axis image; axis off
 end
+
+subplot(4,4,14);
+hold on   
+plot(interleaves, RMSE_grid(:,1,1)  *1e3, '.-', 'Color', colors(1,:))
+plot(interleaves, RMSE_gllim(:,1,1) *1e3, '.-', 'Color', colors(2,:))
+plot(interleaves, RMSE_nn(:,1,1) *1e3,    '.-', 'Color', colors(3,:))
+plot(interleaves, RMSE_grid(:,1,2)  *1e3, 'o-', 'Color', colors(1,:))
+plot(interleaves, RMSE_gllim(:,1,2) *1e3, 'o-', 'Color', colors(2,:))
+plot(interleaves, RMSE_nn(:,1,2) *1e3,    'o-', 'Color', colors(3,:))
+ylim([0 800])
+title('T1 (ms)')
+
+subplot(4,4,15);
+hold on
+plot(interleaves, RMSE_grid(:,2,1)  *1e3, '.-', 'Color', colors(1,:))
+plot(interleaves, RMSE_gllim(:,2,1) *1e3, '.-', 'Color', colors(2,:))
+plot(interleaves, RMSE_nn(:,2,1) *1e3,    '.-', 'Color', colors(3,:))
+plot(interleaves, RMSE_grid(:,2,2)  *1e3, 'o-', 'Color', colors(1,:))
+plot(interleaves, RMSE_gllim(:,2,2) *1e3, 'o-', 'Color', colors(2,:))
+plot(interleaves, RMSE_nn(:,2,2) *1e3,    'o-', 'Color', colors(3,:))
+ylim([0 200])
+title('T2 (ms)')
+
+if nb_param == 3
+    subplot(4,4,16);
+    hold on
+    plot(interleaves, RMSE_grid(:,3,1)  *180/pi, '.-', 'Color', colors(1,:))
+    plot(interleaves, RMSE_gllim(:,3,1) *180/pi, '.-', 'Color', colors(2,:))
+    plot(interleaves, RMSE_nn(:,3,1) *180/pi,    '.-', 'Color', colors(3,:))
+    plot(100,1,'k.')
+    plot(100,1,'ko')
+    plot(interleaves, RMSE_grid(:,3,2)  *180/pi, 'o-', 'Color', colors(1,:))
+    plot(interleaves, RMSE_gllim(:,3,2) *180/pi, 'o-', 'Color', colors(2,:))
+    plot(interleaves, RMSE_nn(:,3,2) *180/pi,    'o-', 'Color', colors(3,:))
+    ylim([0 100])
+    xlim([0 50])
+    title('df (Hz)')
+end
+legend('DBM', 'DB-SL', 'DB-DL', ['N = ' num2str(nb_signals(1))], ['N = ' num2str(nb_signals(2))])
+
+
+h(2) = subplot(442);
+imagesc(1e3*T1)
+colormap(h(2), hot)
+colorbar
+axis image; axis off
+
+h(3) = subplot(443);
+imagesc(1e3*T2)
+colormap(h(3), hot)
+colorbar
+axis image; axis off
+
+h(4) = subplot(444);
+imagesc(df*180/pi)
+colormap(h(4), hot)
+colorbar
+axis image; axis off
 
 
 %%
 
-
 if backup == 1
-    savefig(fig, 'figures/temp_spiral-simplify')
+    savefig(fig, 'figures/AliasingNoise')
 end

@@ -22,8 +22,8 @@ int_T2  = 1e-3 * [20  300];     % between 20 and 3000 ms
 int_df  = pi/180 * [-200 200];  % +/- 400 Hz
 
 nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
-nb_signals = [6^3 10^3];%[16^3 61^3];
-S       = 50;
+nb_signals = [16^3 61^3];
+S       = 1000;
 
 % Experiment settings
 dbdl_computation = 1;
@@ -41,31 +41,28 @@ load_model = [];
 %% Creating data
 
 % Simulation settings
-st      = 5; %standard deviation for FA
+sd      = 2; %standard deviation for FA
 FA      = (pi/180)* [90 ... %Flip anglas (rad)
-           10 + 50 *sin((2*pi/500) *(1:250)) + st*randn(1,250) ...
+           10 + 50 *sin((2*pi/500) *(1:250)) + sd*randn(1,250) ...
            zeros(1,50) ...
-           (10 + 50 *sin((2*pi/500) *(1:250)) + st*randn(1,250)) /2 ...
+           (10 + 50 *sin((2*pi/500) *(1:250)) + sd*randn(1,250)) /2 ...
            zeros(1,50) ...
-           10 + 50 *sin((2*pi/500) *(1:250)) + st*randn(1,250) ...
+           10 + 50 *sin((2*pi/500) *(1:250)) + sd*randn(1,250) ...
            zeros(1,50) ...
-           (10 + 50 *sin((2*pi/500) *(1:99)) + st*randn(1,99)) /2]; % Flip angles
+           (10 + 50 *sin((2*pi/500) *(1:99)) + sd*randn(1,99)) /2]; % Flip angles
 TR      = perlin(length(FA)+100); TR = TR(1,:); % Repetition Time (sec)
 w       = gausswin(50);
 TR      = filter(w,1,TR);
 TR      = TR(51:1050);
 TR      = 1e-3 * (10.5 + 3.5* (TR - min(TR)) ./ max(TR - min(TR)));
 
-
 if ~isempty(load_model)
-    load(['outputs/' load_model], 'FA','TR', 'Params', 'NeuralNet','mx','mn');
+    load(['outputs/' load_model], 'FA','TR', 'Params', 'NeuralNet');
 end
 
 TR = TR(1:S);
 FA = FA(1:S);
-
-
-load('inputs/patterns.mat', 'FA','TR')
+%load('inputs/patterns.mat', 'FA','TR')
 
 
 %% Init
