@@ -1,35 +1,37 @@
 
-
+%% Description
+%
+% Bias-variance decomposition
+%
+% Fabien Boux - 01/2020
 
 Init
 disp(['Running experiment ' mfilename '.m'])
 
 
-%clear
-addpath(genpath('/home_eq/bouxfa/Code/Local/Experiments/Trajectories/functions'))
-addpath(genpath('/home_eq/bouxfa/Code/Local/Experiments/Trajectories/inputs/vdspiral'))
-
-
 %% Settings
 
-display = 0;
-nn_exec = 'cpu';
-%load_model = [];
+display = 1;
+backup  = 1;
+nn_exec = 'auto';
 
-rng(4);
+% experiment settings
+nb_param = 3; % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
+nb_signals = 16^3; %4096
+snr     = 40; %snr thermal noise
+mc_sim  = 100; %number of Monte Carlo simulations
 
-backup = 1;
+%model settings
+Model.K = 50;
 
-snr = 40;
-
-FOV     = 0.28;
-res     = 128;
-
-nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
-nb_signals = [16^3]; %4096; 226981;
+%one can specify a file of previous saved models, else empty
+load_model = [];
 
 
 %% Create phantom
+
+FOV     = 0.28; %field of view (m)
+res     = 128; % resolution
 
 [ref, support, mask] = define_phantom(FOV, res);
 
@@ -41,8 +43,8 @@ if display == 1
     title('Labels')
 end
 
-T1 = nan(size(ref)); T1_ = (1500:300:3000) *1e-3; %(ms)
-T2 = nan(size(ref)); T2_ = (60:60:1000) *1e-3; %(ms)
+T1 = nan(size(ref)); T1_ = (1500:300:3000) *1e-3; %(s)
+T2 = nan(size(ref)); T2_ = (60:60:1000) *1e-3; %(s)
 df = nan(size(ref));
 
 %relaxation times
@@ -83,9 +85,7 @@ end
 
 %% Simulate signals
 
-% From Dan Ma's paper:
-
-%simulation settings
+%simulation FA and TR acquisition settings (from Dan Ma's paper)
 FA      = (pi/180)* [90 ...
            10 + 50 *sin((2*pi/500) *(1:250)) + 5*randn(1,250) ...
            zeros(1,50) ...
@@ -98,19 +98,18 @@ FA      = (pi/180)* [90 ...
 TR      = perlin(length(FA)+100); TR = TR(1,:); % Repetition Time (sec)
 TR      = filter(gausswin(50),1,TR);
 TR      = TR(51:1050);
-TR  =    1e-3 * (10.5 + 3.5* (TR - min(TR)) ./ max(TR - min(TR)));
+TR      = 1e-3 * (10.5 + 3.5* (TR - min(TR)) ./ max(TR - min(TR)));
 
+%change S to use a different number of samples
 S       = 1000;
-sub     = 1;
-TR      = TR(1:sub:S*sub);
-FA      = FA(1:sub:S*sub);
-
+TR      = TR(1:S);
+FA      = FA(1:S);
 
 if ~isempty(load_model)
     idx = 2;
     
     load(['outputs/' load_model], 'FA','TR', 'Params', 'NeuralNet','mx','mn','nb_signals');
-    Params = Params{idx};
+    Model = Model{idx};
     NeuralNet = NeuralNet{idx};
     nb_signals = nb_signals(idx);
     mx = mx{idx};
@@ -128,8 +127,6 @@ elseif nb_param == 3
 end
 Xacq    = (Acq.normalization.*Acq.magnetization).';
 Iref    = reshape(Xacq, N,N, length(TR));
-
-%add noise
 Xacq(any(isnan(Xacq)'),:) = 0;
 
 %generate images
@@ -147,19 +144,15 @@ end
 
 %% Dico generation & Regression training
 
-Parameters.K = 100;
-Parameters.cstr.Sigma  = 'd*';
-Parameters.cstr.Gammat = ''; 
-Parameters.cstr.Gammaw = '';
-Parameters.Lw = 0;
-Parameters.maxiter = 250;
 snr_train = 60;
+Model.snrtrain = inf;
 
+% Define parameter ranges
 int_T1  = 1e-3 * [200 3000];	% between 20 and 3000 ms
-int_T2  = 1e-3 * [20  300];    % between 20 and 3000 ms
+int_T2  = 1e-3 * [20  300];     % between 20 and 300 ms
 int_df  = pi/180 * [-200 200];  % +/- 400 Hz
 
-    
+% Simulate signals
 clear X Y
 nb_step = round(nb_signals^(1/nb_param));
 v1  = int_T1(1) : (int_T1(2) - int_T1(1)) / (nb_step-1) : int_T1(2);
@@ -176,8 +169,7 @@ elseif nb_param == 3
     D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
 end
 X       = (D.normalization.*D.magnetization).';
-DicoG{1}.MRSignals = X; 
-DicoG{1}.Parameters.Par = Y(:,1:nb_param);
+Dico_DBM   = FormatDico(X, Y(:,1:nb_param));
 disp('Dictionary for matching generated')
 
 
@@ -195,29 +187,23 @@ if isempty(load_model)
     end 
     X       = (D.normalization.*D.magnetization).';
     X       = AddNoise(X, snr_train); 
-    DicoR{1}.MRSignals = [real(X) imag(X)];
-    DicoR{1}.Parameters.Par = Y(:,1:nb_param);
-
-    if size(DicoG{1}.MRSignals,1) ~= size(DicoR{1}.MRSignals,1)
-        warning('Sizes are not equals')
-    end
+    Dico_DBL = FormatDico([real(X) imag(X)], Y(:,1:nb_param));
     disp('Dictionary for learning generated')
 
+    if size(Dico_DBM.MRSignals,1) ~= size(Dico_DBL.MRSignals,1)
+        warning('Sizes are not equals')
+    end
 
-    % Learn models
-    [~, Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
+    % Learn models (DB-SL/DB-DL)
+    [~,Model] = AnalyzeMRImages([],Dico_DBL,'DB-SL',Model);
     disp('DB-SL model learnt')
 
-
-    mn      = min(DicoR{1}.Parameters.Par );
-    mx      = max(DicoR{1}.Parameters.Par  - mn);
-    YtrainNN = (DicoR{1}.Parameters.Par  - mn) ./ mx;
-    NeuralNet = EstimateNNmodel(DicoR{1}.MRSignals,YtrainNN,0,nn_exec,100,6);
+    [~,NeuralNet] = AnalyzeMRImages([],Dico_DBL,'DB-DL');
     disp('DB-DL model learnt')
 end
 
 
-%%
+%% Bias-variance analysis
 
 % Generate test data
 if nb_param == 2
@@ -231,7 +217,6 @@ nan_val = any(isnan(Ytest)');
 Ytest(nan_val,:) = nan;
 Xtest(nan_val,:) = nan;
 
-mc_sim = 100;
 clear *grid *gllim *nn
 for mc = 1:mc_sim
     
@@ -240,21 +225,19 @@ for mc = 1:mc_sim
     XtestN  = AddNoise(Xtest, snr);
     
     % Perform DBM
-    Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:nb_param));
+    Estim   = AnalyzeMRImages(XtestN,Dico_DBM,'DBM',[],Ytest(:,1:nb_param));
     Ygrid(:,:,mc) = squeeze(Estim.GridSearch.Y);
     Rmse_grid(:,mc) = Estim.GridSearch.Errors.Rmse;
 
     % Perform DBSL
-    Estim   = AnalyzeMRImages([real(XtestN) imag(XtestN)],[],'DBL', Params, Ytest(:,1:nb_param),[],snr);
-%     Estim   = AnalyzeMRImages(real(XtestN),[],'DBL', Params, Ytest(:,1:nb_param),[],snr);
+    Estim   = AnalyzeMRImages([real(XtestN) imag(XtestN)],[],'DB-SL', Model, Ytest(:,1:nb_param),[],snr);
     Ygllim(:,:,mc) = squeeze(Estim.Regression.Y);
     Rmse_gllim(:,mc) = Estim.Regression.Errors.Rmse;
     CI_gllim(:,:,mc) = squeeze(Estim.Regression.Cov);
     
     % Perform DBDL
-    Y     = EstimateParametersFromNNmodel([real(XtestN) imag(XtestN)], NeuralNet, nn_exec);
-%     Y     = EstimateParametersFromNNmodel(real(XtestN), NeuralNet, nn_exec);
-    Ynn(:,:,mc) = (Y .* mx) + mn;
+    Estim 	= AnalyzeMRImages([real(XtestN) imag(XtestN)],[],'DB-DL', NeuralNet);
+    Ynn(:,:,mc) = squeeze(Estim.Regression.Y);
     Rmse_nn(:,mc) = EvaluateEstimation(Ytest, Ynn(:,:,mc));
 end
 
@@ -267,10 +250,11 @@ for i = 1:size(Ytest,1)
 end
  
 
-%%
+%% Saving
 
 if backup == 1
-    save(['temp/' 'temp_bias_variance_analysis'])
+    clear tmp* Dico* Estim X* Y*
+    save(['temp/' 'BiasVarianceAnalysis'])
 end
 
 
@@ -320,10 +304,6 @@ for p = 1:nb_param
     imagesc((reshape(Bias_gllim(:,p).^2 + Var_gllim(:,p),N,N)).^.5, bds{p})
     axis image; axis off; colormap hot
     
-    
-    
-    
-    axis image; axis off; colormap hot
     if plot_dbm == 1
         subplot(9,3,1+9*(p-1))
         imagesc(reshape(abs(Bias_grid(:,p)),N,N), bds{p})
@@ -355,7 +335,6 @@ for p = 1:nb_param
     T(3,3,p) = nanmean(reshape((Bias_gllim(:,p).^2 + Var_gllim(:,p)).^.5,1,[]));
 end
 
-
 T(:,:,1) = T(:,:,1) * 1e3;
 T(:,:,2) = T(:,:,2) * 1e3;
 T(:,:,3) = T(:,:,3) * 180/pi;
@@ -364,5 +343,5 @@ T(:,:,3) = T(:,:,3) * 180/pi;
 %%
 
 if backup == 1
-    savefig(fig, ['figures/' 'temp_bias_variance_analysis'])
+    savefig(fig, ['figures/' 'BiasVarianceAnalysis'])
 end

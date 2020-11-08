@@ -81,7 +81,7 @@ for s = 1:slices
         for m = 1:length(var_bounds)-1
             if any(reshape( (var_noise >= var_bounds(m)) & (var_noise < var_bounds(m+1)) ,1,[]))
                 var_noise_ = var_bounds(m) + (var_bounds(m+1) - var_bounds(m))/2;
-                Param_updated.theta = updateSigma(Model.theta,var_noise_);
+                Param_updated.theta = UpdateSigma(Model.theta,var_noise_);
 
                 Sequences_in = Sequences(:,:,:,s) .* ( (var_noise >= var_bounds(m)) & (var_noise < var_bounds(m+1)) ) ;
                 Sequences_in(Sequences_in == 0) = nan;

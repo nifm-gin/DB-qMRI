@@ -189,7 +189,7 @@ end
 
 if backup == 1
     clear tmp* X* Y* Dico*
-    save(['temp/' 'BoundaryBehaviour'])
+    save(['temp/' 'BoundaryBehavior'])
 end
 
 
@@ -460,7 +460,7 @@ set(gca,'YDir','normal')
 %%
 
 if backup == 1
-    savefig(fig, ['figures/' 'BoundaryBehaviour'])
+    savefig(fig, ['figures/' 'BoundaryBehavior'])
 end
 
 
