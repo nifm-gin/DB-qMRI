@@ -106,14 +106,12 @@ TR      = TR(1:S);
 FA      = FA(1:S);
 
 if ~isempty(load_model)
-    idx = 2;
+    load(['outputs/' load_model], 'FA','TR', 'Model', 'NeuralNet','nb_signals');
     
-    load(['outputs/' load_model], 'FA','TR', 'Params', 'NeuralNet','mx','mn','nb_signals');
-    Model = Model{idx};
+    idx     = 1; %use to specify the model if several are contained in the Model and NeuralNet structures
+    Model   = Model{idx};
     NeuralNet = NeuralNet{idx};
     nb_signals = nb_signals(idx);
-    mx = mx{idx};
-    mn = mn{idx};
 end
 
 %img settings

@@ -13,44 +13,36 @@ disp(['Running experiment ' mfilename '.m'])
 %% Setting
 
 % Execution settings
-verbose = 2;
+verbose = 1;
 backup  = 1;
-dbdl_computation = 1;
-gpu_opt = 'cpu';
-load_model = [];
 
 % Signal settings
 int_T1  = 1e-3 * [200 3000];	% between 20 and 3000 ms
-int_T2  = 1e-3 * [20  300];    % between 20 and 3000 ms
+int_T2  = 1e-3 * [20  300];     % between 20 and 3000 ms
 int_df  = pi/180 * [-200 200];  % +/- 400 Hz
 
 nb_param = 3;   % 2 for T1 and T2 estimates, and 3 for T1, T2 and Df estimates
-nb_signals = [16^3 61^3];
-S = 1000;
+nb_signals = [6^3 10^3];%[16^3 61^3];
+S       = 50;
 
 % Experiment settings
+dbdl_computation = 1;
 snr_levels = [logspace(1, 2.035, 39) inf];
 nb_test_signals = 10000;
 
 % Regression settings
-Parameters.K = 100;
-Parameters.cstr.Sigma  = 'd*';
-Parameters.cstr.Gammat = ''; 
-Parameters.cstr.Gammaw = '';
-Parameters.Lw = 0;
-Parameters.maxiter = 250;
-snr_train = 60;
+Model_.K = 100;
+Model_.cstr.Sigma  = 'd*';
+Model_.snrtrain = 60;
+%one can specify a file of previous saved models, else empty
+load_model = [];
 
 
 %% Creating data
 
-% Adding to path
-addpath(genpath('functions'))
-addpath(genpath('tools'))
-
 % Simulation settings
-st      = 5;
-FA      = (pi/180)* [90 ...
+st      = 5; %standard deviation for FA
+FA      = (pi/180)* [90 ... %Flip anglas (rad)
            10 + 50 *sin((2*pi/500) *(1:250)) + st*randn(1,250) ...
            zeros(1,50) ...
            (10 + 50 *sin((2*pi/500) *(1:250)) + st*randn(1,250)) /2 ...
@@ -58,8 +50,6 @@ FA      = (pi/180)* [90 ...
            10 + 50 *sin((2*pi/500) *(1:250)) + st*randn(1,250) ...
            zeros(1,50) ...
            (10 + 50 *sin((2*pi/500) *(1:99)) + st*randn(1,99)) /2]; % Flip angles
-%TR      = 1e-3 * (10.5  + 3.5 * rand(1,500));    % Uniform between 10.5 and 14 ms
-% procedural noise (we believe perlin noise)
 TR      = perlin(length(FA)+100); TR = TR(1,:); % Repetition Time (sec)
 w       = gausswin(50);
 TR      = filter(w,1,TR);
@@ -81,6 +71,7 @@ load('inputs/patterns.mat', 'FA','TR')
 %% Init
 t_grid          = nan(length(snr_levels), length(nb_signals));
 t_gllim         = t_grid;
+t_nn            = t_grid;
 NRMSE_grid      = nan(length(snr_levels), length(nb_signals), nb_param);
 RMSE_grid       = NRMSE_grid; MAE_grid = NRMSE_grid;
 NRMSE_gllim     = NRMSE_grid;
@@ -114,9 +105,7 @@ for f = 1:size(nb_signals,2)
         D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
     end
     X       = (D.normalization.*D.magnetization).';
-%     DicoG{1}.MRSignals = abs(X);
-    DicoG{1}.MRSignals = X;
-    DicoG{1}.Parameters.Par = Y(:,1:nb_param);
+    Dico_DBM = FormatDico(X, Y(:,1:nb_param));
 
     
     if isempty(load_model)
@@ -133,22 +122,16 @@ for f = 1:size(nb_signals,2)
             D       = MRF_dictionary(Y(:,1), Y(:,2), Y(:,3), FA, TR); 
         end 
         X       = (D.normalization.*D.magnetization).';
-        X       = AddNoise(X, snr_train); 
-%         DicoR{1}.MRSignals = abs(X);
-        DicoR{1}.MRSignals = [real(X) imag(X)];
-        DicoR{1}.Parameters.Par = Y(:,1:nb_param);
+        Dico_DBL = FormatDico([real(X) imag(X)], Y(:,1:nb_param));
 
-        if size(DicoG{1}.MRSignals,1) ~= size(DicoR{1}.MRSignals,1)
+        if size(Dico_DBM.MRSignals,1) ~= size(Dico_DBL.MRSignals,1)
             warning('Sizes are not equals')
         end
     
-        [~, Params{f}] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
+        [~,Model{f}] = AnalyzeMRImages([],Dico_DBL,'DB-SL',Model_);
 
         if dbdl_computation == 1
-            mn{f}   = min(DicoR{1}.Parameters.Par );
-            mx{f}   = max(DicoR{1}.Parameters.Par  - mn{f});
-            YtrainNN = (DicoR{1}.Parameters.Par  - mn{f}) ./ mx{f};
-            NeuralNet{f} = EstimateNNmodel(DicoR{1}.MRSignals,YtrainNN,0,gpu_opt,100,6);
+            [~,NeuralNet{f}] = AnalyzeMRImages([],Dico_DBL,'DB-DL');
         end
     end
     
@@ -174,19 +157,18 @@ for f = 1:size(nb_signals,2)
         real_snr(snr,f)     = mean(tmp); tmp = [];
 
         % Perform DBM
-%         Estim   = AnalyzeMRImages(abs(XtestN),DicoG,'DBM',[],Ytest(:,1:nb_param));
-        Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:nb_param));
+        Estim   = AnalyzeMRImages(XtestN,Dico_DBM,'DBM',[],Ytest(:,1:nb_param));
 
         t_grid(snr,f)       = Estim.GridSearch.quantification_time;
         NRMSE_grid(snr,f,:) = Estim.GridSearch.Errors.Nrmse;
         RMSE_grid(snr,f,:)	= Estim.GridSearch.Errors.Rmse;
         MAE_grid(snr,f,:) 	= Estim.GridSearch.Errors.Mae;
         
-%         XtestN              = abs(XtestN); % Only consider the module of signals
+        %concat for DBL methods
         XtestN = [real(XtestN) imag(XtestN)];
         
         % Perform DB-SL
-        Estim   = AnalyzeMRImages(XtestN,[],'DBL',Params{f},Ytest(:,1:nb_param));
+        Estim   = AnalyzeMRImages(XtestN,[],'DB-SL',Model{f},Ytest(:,1:nb_param));
 
         t_gllim(snr,f)   	= Estim.Regression.quantification_time;
         NRMSE_gllim(snr,f,:) = Estim.Regression.Errors.Nrmse;
@@ -195,11 +177,12 @@ for f = 1:size(nb_signals,2)
         
         % Perform DB-DL
         if dbdl_computation == 1
-            Ynn     = EstimateParametersFromNNmodel(XtestN,NeuralNet{f},gpu_opt);
-            Ynn     = (Ynn .* mx{f}) + mn{f};
+            Estim   = AnalyzeMRImages(XtestN,[],'DB-DL',NeuralNet{f},Ytest(:,1:nb_param));
 
-            %estimation accuracy
-            [RMSE_nn(snr,f,:), NRMSE_nn(snr,f,:), MAE_nn(snr,f,:)] = EvaluateEstimation(Ytest, Ynn);
+            t_nn(snr,f)   	= Estim.Regression.quantification_time;
+            NRMSE_nn(snr,f,:) = Estim.Regression.Errors.Nrmse;
+            RMSE_nn(snr,f,:) = Estim.Regression.Errors.Rmse;
+            MAE_nn(snr,f,:)  = Estim.Regression.Errors.Mae;
         end
             
     end %snr
@@ -214,6 +197,7 @@ RMSE(:,2,:,:) = RMSE_gllim;
 MAE(:,1,:,:) = MAE_grid;
 MAE(:,2,:,:) = MAE_gllim;
 if dbdl_computation == 1
+    t(:,3,:) 	= t_nn;
     RMSE(:,3,:,:) = RMSE_nn;
     NRMSE(:,3,:,:) = NRMSE_nn;
     MAE(:,3,:,:) = MAE_nn;
@@ -226,7 +210,7 @@ fing_signals = X(1:round((1/1000)*size(X,1)):end,:);
 
 if backup == 1
     if isempty(load_model)
-        save(['outputs/bSSFP_models_ID' num2str(2^16) '.mat'], 'FA','TR', 'Params', 'NeuralNet','mx','mn', 'nb_signals','-v7.3');
+        save(['outputs/bSSFP_models_ID' num2str(2^16) '.mat'], 'FA','TR', 'Model', 'NeuralNet', 'nb_signals','-v7.3');
     end
     clear tmp* D Dico* X* Y*
     save(['temp/' 'bSSFPfingerprints'],'-v7.3')
@@ -296,15 +280,14 @@ for p = 1:size(RMSE,4)
     xlabel('SNR');
     ylabel('RMSE (s)');
     
-     
-     switch p
-         case 1
-             ylim([0 0.6])
-         case 2
-             ylim([0 0.04])
-         case 3
-             ylim([0 120])
-     end
+    switch p
+        case 1
+            ylim([0 0.6])
+        case 2
+            ylim([0 0.04])
+        case 3
+            ylim([0 120])
+    end
 end
 plot(200, 1, 'k.')
 plot(200, 1, 'ko')
@@ -314,6 +297,6 @@ legend('DBM', 'DB-SL','DB-DL', ['N = ' num2str(nb_signals(1))], ['N = ' num2str(
 %% Exporting figures
 
 if backup == 1
-    savefig(fig, ['figures/' 'bSSFPfingerprints-supp'])
+    savefig(fig, ['figures/' 'bSSFPfingerprints'])
 end
 
