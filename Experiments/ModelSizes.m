@@ -50,7 +50,6 @@ title('(d)')
 S = 0:50:3000;
 
 P = 3;
-% Z = [100 200 300 500];
 Z = [100 300 500 0];
 
 marks = {'-','--', '-.', ':'};
@@ -82,7 +81,6 @@ legend([repmat('H = ',numel(H),1) num2str(H')])
 title('(b)')
 
 
-
 K = [50 75 100 200];
 
 g(3) = subplot(223);
@@ -97,7 +95,8 @@ title('(c)')
 
 linkaxes(g,'y')          
 
+
 %%
 
-savefig(fig, ['figures/' 'temp_model_sizes'])
+savefig(fig, ['figures/' 'ModelSizes'])
 

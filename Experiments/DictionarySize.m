@@ -32,28 +32,25 @@ snr_levels = [logspace(1, 2.035, 39) inf];
 nb_test_signals = 10000;
 
 % Regression settings
-K = 100;
-Model.cstr.Sigma  = 'd*';
-Model.cstr.Gammat = ''; 
-Model.cstr.Gammaw = '';
-Model.Lw = 0;
-snr_train = 60;
-
+K       = 50; 
 fast_limit = 500;
 dbdl_computation = 1;
 
 
 %% Init data
 
-mNRMSE_grid  = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
-mRMSE_grid   = mNRMSE_grid; mMAE_grid = mNRMSE_grid; 
+mNRMSE_grid = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
+mRMSE_grid  = mNRMSE_grid; mMAE_grid = mNRMSE_grid; 
 mNRMSE_gllim = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
-mRMSE_gllim  = mNRMSE_gllim; mMAE_gllim = mNRMSE_gllim;
-mNRMSE_nn    = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
-mRMSE_nn     = mNRMSE_nn; mMAE_nn = mNRMSE_nn; 
-t_grid = mNRMSE_grid; t_gllim = mNRMSE_gllim; t_gllim_learn = mNRMSE_gllim;
-mem_size_grid = t_grid; mem_size_gllim = mem_size_grid; 
-Steps        = nan(size(nb_signals,1), size(nb_signals,2));
+mRMSE_gllim = mNRMSE_gllim; mMAE_gllim = mNRMSE_gllim;
+mNRMSE_nn   = nan(length(snr_levels), size(nb_signals,1), size(nb_signals,2));
+mRMSE_nn  	= mNRMSE_nn; mMAE_nn = mNRMSE_nn; 
+t_grid   	= mNRMSE_grid;
+t_gllim  	= mNRMSE_gllim; t_gllim_learn = mNRMSE_gllim;
+t_nn        = mNRMSE_gllim; t_nn_learn = mNRMSE_gllim;
+mem_size_grid = t_grid;
+mem_size_gllim = mem_size_grid; 
+mem_size_nn = mem_size_grid;
 
 
 %% Processing 
@@ -70,52 +67,31 @@ for n = 1:size(nb_signals,1)
         
         if verbose >= 1, disp([num2str(nb_param(n)) ' - ' num2str(nb_signals(n,f))]); end
         
-        % Compute dico grid
-        clear X Y
-        if nb_param(n) ~= 1
-            nb_step = nb_signals(n,f)^(1/nb_param(n));
-        else
-            nb_step = nb_signals(n,f);
-        end
-        step    = (int(2)-int(1))/nb_step;
-        v       = int(1)+step/2:step:int(2)-step/2;
-        Y       = arrangement(v,nb_param(n));
+        % Generate dico grid
+        [X, Y] = GenerateScalableSignals(p(1:nb_param(n)), int, nb_signals(n,f), 'Grid');
+        Dico_DBM = FormatDico(X, Y);
         
-        % Save the step size
-        Steps(n,f) = step;
-        parfor sim = 1:size(Y,1)
-            X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param(n)));
-        end
-        DicoG{1}.MRSignals = abs(X); 
-        DicoG{1}.Parameters.Par = Y;
-        clear X Y
+        % Generate training dataset
+        [X, Y] = GenerateScalableSignals(p(1:nb_param(n)), int, nb_signals(n,f), 'qRandom');
+        Dico_DBL = FormatDico(X, Y);
         
-        % Compute training dataset
-        Y  	= int(1) + (int(2) - int(1)) * net(scramble(sobolset(nb_param(n)),'MatousekAffineOwen'),nb_signals(n,f));
-        parfor sim = 1:size(Y,1)
-            X(sim,:) = toyMRsignal(Y(sim,:),p(1:nb_param(n)));
-        end
-        DicoR{1}.MRSignals = AddNoise(abs(X), snr_train); 
-        DicoR{1}.Parameters.Par = Y;
-        clear X Y 
-        
-        if size(DicoG{1}.MRSignals,1) ~= size(DicoR{1}.MRSignals,1)
+        if size(Dico_DBM.MRSignals,1) ~= size(Dico_DBL.MRSignals,1)
             warning('Sizes are not equals')
         end
         
         if nb_signals(n,f) > fast_limit
-            Model.K = K;
+            Model_.K = K;
         elseif (nb_signals(n,f) > 100) && (nb_signals(n,f) <= fast_limit)
-            Model.K = 30;
+            Model_.K = 30;
         else
-            Model.K = 10;
+            Model_.K = 10;
         end
         
         %learn models
-        [~,Params] = AnalyzeMRImages([],DicoR,'DB-SL',Model);
+        [~,Model] = AnalyzeMRImages([],Dico_DBL,'DB-SL',Model_);
         
         if dbdl_computation == 1
-            [~,Params_nn] = AnalyzeMRImages([],DicoR,'DB-DL');
+            [~,NeuralNet] = AnalyzeMRImages([],Dico_DBL,'DB-DL');
         end
         
         % Need to remove parfor loop for memory requirement computation
@@ -124,18 +100,14 @@ for n = 1:size(nb_signals,1)
             if verbose == 2, disp(['(n,f) = (' num2str(n) ',' num2str(f) ') - Snr order: ' num2str(snr_levels(snr))]); end
             
             % Generate test data
-            Ytest 	= int(1) + (int(2) - int(1)) * rand(nb_test_signals,nb_param(n));
-            Xtest = [];
-            for sim = 1:size(Ytest,1)
-                Xtest(sim,:) = toyMRsignal(Ytest(sim,:),p(1:nb_param(n)));
-            end
+            [Xtest, Ytest] = GenerateScalableSignals(p(1:nb_param(n)), int, nb_test_signals, 'Random');
             
             % Add noise
             [XtestN, tmp]       = AddNoise(Xtest, snr_levels(snr));
             real_snr(snr,n,f)   = mean(tmp); tmp = [];
 
             % Perform DBM
-            Estim   = AnalyzeMRImages(XtestN,DicoG,'DBM',[],Ytest(:,1:size(DicoG{1}.Parameters.Par,2)));
+            Estim   = AnalyzeMRImages(XtestN,Dico_DBM,'DBM',[],Ytest(:,1:size(Dico_DBM.Parameters.Par,2)));
             
             %time
             t_grid(snr,n,f)         = Estim.GridSearch.quantification_time;
@@ -146,7 +118,7 @@ for n = 1:size(nb_signals,1)
             mMAE_grid(snr,n,f)      = nanmean(Estim.GridSearch.Errors.Mae);
             
             % Perform DBL
-            Estim   = AnalyzeMRImages(XtestN,[],'DB-SL',Params,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+            Estim   = AnalyzeMRImages(XtestN,[],'DB-SL',Model,Ytest(:,1:size(Dico_DBL.Parameters.Par,2)),outliers);
 
             %times
             t_gllim(snr,n,f)        = Estim.Regression.quantification_time;
@@ -160,8 +132,12 @@ for n = 1:size(nb_signals,1)
             
             % Perform DB-DL
             if dbdl_computation == 1
-                Estim   = AnalyzeMRImages(XtestN,[],'DB-DL',Params_nn,Ytest(:,1:size(DicoR{1}.Parameters.Par,2)),outliers);
+                Estim   = AnalyzeMRImages(XtestN,[],'DB-DL',NeuralNet,Ytest(:,1:size(Dico_DBL.Parameters.Par,2)),outliers);
 
+                %times
+                t_nn(snr,n,f)        = Estim.Regression.quantification_time;
+                t_nn_learn(snr,n,f)  = Estim.Regression.learning_time;
+                
                 %estimation accuracy
                 mRMSE_nn(snr,n,f) 	= nanmean(Estim.Regression.Errors.Rmse);
                 mNRMSE_nn(snr,n,f)  = nanmean(Estim.Regression.Errors.Nrmse);
@@ -170,12 +146,16 @@ for n = 1:size(nb_signals,1)
             
 %             %memory requirement
 %             %other lines of the for loop can be ignored + parfor -> for
-%             me      = whos('DicoG');
+%             me      = whos('Dico_DBM');
 %             mem_size_grid(snr,n,f)  = me.bytes;
 
-%             [Estim,Params] = AnalyzeMRImages([],DicoR,'DBL',Parameters);
-%             me      = whos('Params');
-%             mem_size_gllim(snr,n,f) =    me.bytes;
+%             [Estim, Model] = AnalyzeMRImages([],Dico_DBL,'DB-SL',Model_);
+%             me      = whos('Model');
+%             mem_size_gllim(snr,n,f) = me.bytes;
+
+%             [Estim, NeuralNet] = AnalyzeMRImages([],Dico_DBL,'DB-DL');
+%             me      = whos('NeuralNet');
+%             mem_size_nn(snr,n,f)  = me.bytes;
             
         end %snr
     end
@@ -272,7 +252,7 @@ for nb_param_wted = nb_param_wted_v
     if count > 2, xlabel('SNR'); end
     switch count
         case 1
-            title('DBL \newline (b)');
+            title('DB-SL \newline (b)');
         case 4
             title('(e)');
     end
@@ -294,7 +274,7 @@ for nb_param_wted = nb_param_wted_v
     if count > 2, xlabel('SNR'); end
     switch count
         case 1
-            title('NN \newline (c)');
+            title('DB-DL \newline (c)');
         case 4
             title('(f)');
     end
@@ -346,7 +326,7 @@ for n = 1:size(nb_signals,1)
                 if dbdl_computation == 1
                     legend('DBM','DB-SL','DB-DL');
                 else
-                    legend('DBM','DBL');
+                    legend('DBM','DB-SL');
                 end
             end
             title([num2str(nb_signals(n,f)) ' signals']);
