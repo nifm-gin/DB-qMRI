@@ -27,4 +27,4 @@ addpath([project_root_path filesep 'Experiments'])
 %% Create required folders
 
 if ~exist([project_root_path filesep 'functions'], 'dir'), mkdir([project_root_path filesep 'functions']); end
-if ~exist([project_root_path filesep 'Experiments/temp'], 'dir'), mkdir([project_root_path filesep 'Experiments/temp']); end 
+if ~exist([project_root_path filesep 'temp'], 'dir'), mkdir([project_root_path filesep 'temp']); end 

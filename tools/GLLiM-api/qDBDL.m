@@ -58,8 +58,8 @@ Estimation.Regression.learning_time = toc;
 % Use the model to quantify estimates
 tic
 for s = 1:slices
-    Estimation.Regression.Y(:,:,:,s) = EstimateParametersFromNNmodel(reshape(Sequences(:,:,:),s1*s2,t), Model.NeuralNet, Model.Exec);
-    Estimation.Regression.Y(:,:,:,s) = (Estimation.Regression.Y(:,:,:,s) .* Model.factors.Ymax) + Model.factors.Ymin;
+    Estimation.Regression.Y(:,:,:,s) = reshape(( EstimateParametersFromNNmodel(reshape(Sequences(:,:,:,s),s1*s2,t), Model.NeuralNet, Model.Exec)...
+                                        .* Model.factors.Ymax) + Model.factors.Ymin, s1,s2,[]);
     
     if ~isempty(References)
         [Estimation.Regression.Errors.Rmse(s,:), Estimation.Regression.Errors.Nrmse(s,:), Estimation.Regression.Errors.Mae(s,:), Estimation.Regression.Errors.Nmae(s,:)] = ...

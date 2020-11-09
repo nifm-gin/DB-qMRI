@@ -45,10 +45,10 @@ echtime = echtime.t;
 % Quasi-random
 load(dicos{1})
 Xqmc    = Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
-parfor i = 1:size(Xqmc,1)
-    Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xqmc,2)), Xqmc(i,:), echtime);
-end
-Xqmc    = Tmp; Tmp  = [];
+% parfor i = 1:size(Xqmc,1)
+%     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xqmc,2)), Xqmc(i,:), echtime);
+% end
+% Xqmc    = Tmp; Tmp  = [];
 Yqmc    = Dico.Parameters.Par;
 
 Xqmc(Dico.Parameters.Par(:,4)== 1e-6,:) = [];
@@ -69,10 +69,10 @@ Yqmc    = Yqmc(r,:);
 % Grid
 load(dicos{2})
 Xgrid 	= Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
-parfor i = 1:size(Xgrid,1)
-    Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xgrid,2)), Xgrid(i,:), echtime);
-end
-Xgrid   = Tmp; Tmp  = [];
+% parfor i = 1:size(Xgrid,1)
+%     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xgrid,2)), Xgrid(i,:), echtime);
+% end
+% Xgrid   = Tmp; Tmp  = [];
 Ygrid   = Dico.Parameters.Par;
 
 Xgrid(Dico.Parameters.Par(:,4)== 1e-6,:) = [];
@@ -93,10 +93,10 @@ Ygrid   = Ygrid(r,:);
 % Random - test signals
 load(dicos{3})
 Xtest_ 	= Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
-parfor i = 1:size(Xtest_,1)
-    Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xtest_,2)), Xtest_(i,:), echtime);
-end
-Xtest_  = Tmp; Tmp  = [];
+% parfor i = 1:size(Xtest_,1)
+%     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xtest_,2)), Xtest_(i,:), echtime);
+% end
+% Xtest_  = Tmp; Tmp  = [];
 Ytest_  = Dico.Parameters.Par;
 
 Xtest_(Dico.Parameters.Par(:,4)== 1e-6,:) = [];
@@ -115,7 +115,8 @@ Ytest_(Ytest_(:,2) > 40 *1e-6,:) = [];
 
 %% Reduce datasets to keep only signals with StO2 around 0.7
 
-bds_sto2 = [0.75 0.85];
+bds_sto2 = [0.65 0.75];
+bds_sto2 = [0.6 0.8];
 
 v   = (Ygrid(:,3) <= bds_sto2(1) | Ygrid(:,3) >= bds_sto2(2));
 Xgrid(v,:)  = [];
@@ -234,9 +235,9 @@ for i = 1:2
 end
 
 %init
-dens        = nan(1:length(intt_{1})-floor(lw/2), 1:length(intt_{2})-floor(lw/2));
-inter1      = dens;     
-inter2      = dens;
+dens        = zeros(length(intt_{1})-floor(lw/2), length(intt_{2})-floor(lw/2));
+inter1      = zeros(1,size(dens,1));     
+inter2      = zeros(1,size(dens,2));
 Rmse_grid   = nan(size(dens,1), size(dens,2), nb_param);
 Rmse_gllim  = Rmse_grid;
 Rmse_nn     = Rmse_grid;
@@ -279,19 +280,18 @@ for s1 = floor(lw/2)+1:length(intt_{1})-floor(lw/2)
                             (( (int_vsi{i}(1) -2e-6)  <= subint2(1) ) &  ( subint2(2) <= (int_vsi{i}(2) +2e-6)));
         end
         
-        if dens(s1,s2) ~= 0
+        if dens(s1,s2) > 1
             % Compute estimates
             %DBM
             Y       = EstimateParametersFromGrid(Xtest,Xgrid,Ygrid);
             [Rmse_grid(s1,s2,:),~, Mae_grid(s1,s2,:)] = EvaluateEstimation(Ytest, Y);
             
-            % GLLiM
+            %DB-sL
             Estim   = AnalyzeMRImages(Xtest, [], 'DB-SL', Model, [],[], snr);
             [Rmse_gllim(s1,s2,:),~, Mae_gllim(s1,s2,:)] = EvaluateEstimation(Ytest(:,1:nb_param), squeeze(Estim.Regression.Y));
             CI(s1,s2,:) = nanmean(squeeze(Estim.Regression.Cov.^.5));
 
-
-            %NN
+            %DB-DL
             if dbdl_computation == 1
                 Estim   = AnalyzeMRImages(Xtest, [], 'DB-DL', NeuralNet);
                 [Rmse_nn(s1,s2,:),~, Mae_nn(s1,s2,:)] = EvaluateEstimation(Ytest(:,1:nb_param), squeeze(Estim.Regression.Y));
@@ -344,7 +344,7 @@ for p = 1:2
     end
     colormap(mycmap()); colorbar
     xlabel('BVf (%)'); ylabel('VSI (um)')
-    title('(a)')
+    title('(a) DBM')
 
     
     %DB-SL
@@ -385,7 +385,7 @@ for p = 1:2
         end
         colormap(mycmap()); colorbar
         xlabel('BVf (%)'); ylabel('VSI (um)')
-        title('(c)')
+        title('(c) DB-DL')
     end
 
     
