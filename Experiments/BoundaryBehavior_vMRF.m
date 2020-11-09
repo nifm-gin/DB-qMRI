@@ -13,44 +13,37 @@ disp(['Running experiment ' mfilename '.m'])
 
 %% Parameters
 
-use_extra_entries = 1;
-
-% Function definition
-nb_param = 3;
-
-snr     = 60;
-
-dicos   = {'inputs/new/qMC.mat',... %qMC
-           'inputs/new/Regular.mat',... %grid
-           'inputs/new/qMC.mat',... %test signals
-          };
-use_recomputed_parameter = 0;
-     
-N       = 150;
-lw      = 8;
-
-dbdl_computation = 0;
-backup = 1;
+backup  = 1;
 verbose = 1;
 display = 0; %if 1 plot extra figures, else only the main figure
 
+%experiment settings
+dbdl_computation = 1;
+use_extra_entries = 1;
+N       = 150;
+lw      = 8;
+snr     = 60;
+nb_param = 3;
+
 %regression settings
-Model_.K    = 150;
+Model_.K    = 60;
 Model_.Lw   = 0;
 
 
 %% Load MGEFIDSE signals
 
+%dictionary filenames
+dicos   = {'inputs/new/qMC.mat',... %qMC
+           'inputs/new/Regular.mat',... %grid
+           'inputs/new/qMC.mat',... %test signals
+          };
+      
 % Load echotimes
 echtime = load('inputs/echoetime.mat');
 echtime = echtime.t;
 
 % Quasi-random
 load(dicos{1})
-if use_recomputed_parameter == 1
-    Dico.Parameters.Par(:,1) = Dico.Parameters.Par(:,7);
-    Dico.Parameters.Par(:,2) = Dico.Parameters.Par(:,8);
-end
 Xqmc    = Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
 parfor i = 1:size(Xqmc,1)
     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xqmc,2)), Xqmc(i,:), echtime);
@@ -75,10 +68,6 @@ Yqmc    = Yqmc(r,:);
 
 % Grid
 load(dicos{2})
-if use_recomputed_parameter == 1
-    Dico.Parameters.Par(:,1) = Dico.Parameters.Par(:,7);
-    Dico.Parameters.Par(:,2) = Dico.Parameters.Par(:,8);
-end
 Xgrid 	= Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
 parfor i = 1:size(Xgrid,1)
     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xgrid,2)), Xgrid(i,:), echtime);
@@ -103,10 +92,6 @@ Ygrid   = Ygrid(r,:);
 
 % Random - test signals
 load(dicos{3})
-if use_recomputed_parameter == 1
-    Dico.Parameters.Par(:,1) = Dico.Parameters.Par(:,7);
-    Dico.Parameters.Par(:,2) = Dico.Parameters.Par(:,8);
-end
 Xtest_ 	= Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
 parfor i = 1:size(Xtest_,1)
     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xtest_,2)), Xtest_(i,:), echtime);
@@ -124,7 +109,6 @@ Ytest_  = Ytest_(r,:);
 
 Ytest_ = Ytest_(:,[2 3 1]);
 
-%
 Xtest_(Ytest_(:,2) > 40 *1e-6,:) = [];
 Ytest_(Ytest_(:,2) > 40 *1e-6,:) = [];
 
@@ -250,8 +234,7 @@ for i = 1:2
 end
 
 %init
-dens        = nan(length(floor(lw/2)+1:length(intt_{1})-floor(lw/2)),...
-                  length(floor(lw/2)+1:length(intt_{2})-floor(lw/2)));
+dens        = nan(1:length(intt_{1})-floor(lw/2), 1:length(intt_{2})-floor(lw/2));
 inter1      = dens;     
 inter2      = dens;
 Rmse_grid   = nan(size(dens,1), size(dens,2), nb_param);
