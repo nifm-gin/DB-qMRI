@@ -1,7 +1,7 @@
 
 %% Description
 %
-% The DBL method estimates the parameters using a continuous function that
+% The DBL methods estimate the parameters using a continuous function that
 % is not restricted to the dictionary parameter space. We therefore 
 % investigated the behaviors of the DBL and DBM methods outside the
 % boundaries of this space. Two 2-dimensional parameter subspaces was
