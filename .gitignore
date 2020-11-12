@@ -3,6 +3,7 @@ logs/*
 outputs/*
 tikz/*
 inputs/*
+Experiments/additional
 
 temp*
 tmp_*

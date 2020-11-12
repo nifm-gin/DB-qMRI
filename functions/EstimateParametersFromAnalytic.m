@@ -1,5 +1,9 @@
 function [Yestim] = EstimateParametersFromAnalytic(t,tse, Xpre,Xpost, Params)
 
+%We work in ms, thus convert sec to ms
+t   = t * 1e3;
+tse = tse * 1e3;
+
 
 echotimes_used = (t <= tse/2);
 

@@ -8,6 +8,7 @@ if size(Xtrain,1) ~= size(Ytrain, 1)
     error('Sizes do not match')
 end
 
+%create dico
 Dico.MRSignals = Xtrain;
 Dico.Parameters.Par = Ytrain;
 
