@@ -37,7 +37,7 @@ nb_repetition = 500;
 snr_test = inf;
 
 % Method settings
-methods = {'DBM','DB-SL'};
+methods = {'DBM', 'DB-DL'}; %{'DBM', 'DB-SL'};
 sampling_strategies = {'Grid', 'Random', 'qRandom'};
 Model.snrtrain = inf;
 
@@ -46,7 +46,7 @@ Model.snrtrain = inf;
 
 % Expe rand ID
 Id      = randi(2^16,1);
-% You can specify a value to replay an experiment saved in the temp folder
+% You can specify a value to use an experiment already saved in the temp folder
 
 
 %% Processing 
@@ -68,8 +68,8 @@ for exp = 1:length(signals) % for all experiments
         
         mRMSE_DBM   = nan(length(sampling_strategies), nb_repetition);
         mMAE_DBM    = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
-        mRMSE_DBL   = mRMSE_DBM;
-        mMAE_DBL    = mRMSE_DBM; mNRMSE_DBL = mRMSE_DBM; mNMAE_DBL = mRMSE_DBM;
+        mRMSE_DBSL  = mRMSE_DBM;
+        mMAE_DBSL   = mRMSE_DBM; mNRMSE_DBSL = mRMSE_DBM; mNMAE_DBSL = mRMSE_DBM;
         sizes       = nan(length(sampling_strategies), nb_repetition);
 
         for rep = 1:nb_repetition
@@ -91,7 +91,7 @@ for exp = 1:length(signals) % for all experiments
                 % Compute estimates
                 if any(contains(methods,'DBM'))
                     tic;
-                    Estim 	= AnalyzeMRImages(Xtest,Dico,'DBM',[],Ytest(:,1:size(Y,2)));
+                    Estim 	= AnalyzeMRImages(Xtest, Dico, 'DBM', [], Ytest(:,1:size(Y,2)));
                     t_DBM(s,rep)        = toc;
                     
                     mRMSE_DBM(s,rep)	= mean(Estim.GridSearch.Errors.Rmse);
@@ -103,18 +103,30 @@ for exp = 1:length(signals) % for all experiments
                 if any(contains(methods,'DB-SL'))
                     
                     tic;
-                    Estim 	= AnalyzeMRImages(Xtest,Dico,'DB-SL',Model,Ytest(:,1:size(Y,2)));
+                    Estim 	= AnalyzeMRImages(Xtest, Dico, 'DB-SL', Model, Ytest(:,1:size(Y,2)));
                     t_DBL(s,rep)        = toc;
                     
-                    mRMSE_DBL(s,rep)    = mean(Estim.Regression.Errors.Rmse);
-                    mMAE_DBL(s,rep)     = mean(Estim.Regression.Errors.Mae);
-                    mNRMSE_DBL(s,rep)   = mean(Estim.Regression.Errors.Nrmse);
-                    mNMAE_DBL(s,rep)    = mean(Estim.Regression.Errors.Nmae);
+                    mRMSE_DBSL(s,rep)   = mean(Estim.Regression.Errors.Rmse);
+                    mMAE_DBSL(s,rep)    = mean(Estim.Regression.Errors.Mae);
+                    mNRMSE_DBSL(s,rep)  = mean(Estim.Regression.Errors.Nrmse);
+                    mNMAE_DBSL(s,rep)   = mean(Estim.Regression.Errors.Nmae);
+                end
+                
+                if any(contains(methods,'DB-DL'))
+                    
+                    tic;
+                    Estim 	= AnalyzeMRImages(Xtest, Dico, 'DB-DL', Model, Ytest(:,1:size(Y,2)));
+                    t_DBDL(s,rep)        = toc;
+                    
+                    mRMSE_DBDL(s,rep)    = mean(Estim.Regression.Errors.Rmse);
+                    mMAE_DBDL(s,rep)     = mean(Estim.Regression.Errors.Mae);
+                    mNRMSE_DBDL(s,rep)   = mean(Estim.Regression.Errors.Nrmse);
+                    mNMAE_DBDL(s,rep)    = mean(Estim.Regression.Errors.Nmae);
                 end
             end   
         end
 
-        % Save results
+        % Save intermediate results
         clear *tmp* Dico X* Y* Estim
         save(['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(nb_param) '-' num2str(nb_train_signals) '.mat'])
 
@@ -145,9 +157,9 @@ for i = 1:length(signals)
     filename = ['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(param(i)) '-' num2str(signals(i)) '.mat'];
     
     if exist(filename,'file')
-        load(filename,'mRMSE_DBM','mRMSE_DBL','nb_param','nb_train_signals');
+        load(filename,'mRMSE_DBM','mRMSE_DBSL','mRMSE_DBDL','nb_param','nb_train_signals');
         DBM_rmse{i} = mRMSE_DBM;
-        DBL_rmse{i} = mRMSE_DBL;
+        DBL_rmse{i} = mRMSE_DBDL;
     else
         DBM_rmse{i} = [];
         DBL_rmse{i} = [];
@@ -176,7 +188,7 @@ for i = [1 4 7]
         ylabel(' ')
     end
     xtickangle(45)
-    set(gca, 'fontsize',15, 'XTickLabels',{'Regular','Rand','QRand'})
+    set(gca, 'fontsize',15, 'XTickLabels', {'Regular','Rand','qRand'})
     
     title([titles{c} ' ' num2str(title_nb_param(i)) ' parameters'])
     
@@ -206,7 +218,7 @@ for i = 1:length(DBL_rmse)
         ylabel(' ')
     end
     xtickangle(45)
-    set(gca,'linew',1.5, 'fontsize',15, 'XTickLabels',{'Grid','Rand','QRand'})
+    set(gca,'linew',1.5, 'fontsize',15, 'XTickLabels',{'Grid','Rand','qRand'})
     
     title(titles{i})
     set(findobj(gca,'type','line'),'linew',1.5)
