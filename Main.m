@@ -35,9 +35,13 @@ p = parpool(nb_workers);
 %       More experiments and average RMSE is computed for both the DBM and
 %       DBL methods.
 
-clear 
-ParameterSpaceSampling
-if close_figure == 1, close all; end
+try
+    clear 
+    ParameterSpaceSampling
+    if close_figure == 1, close all; end
+catch
+    warning('ParameterSpaceSampling.m execution failed')
+end
 
 
 %% Impact of the dictionary size
@@ -49,9 +53,13 @@ if close_figure == 1, close all; end
 %   - DictionarySize-supp.fig 
 %       More experiments.
 
-clear 
-DictionarySize
-if close_figure == 1, close all; end
+try
+    clear 
+    DictionarySize
+    if close_figure == 1, close all; end
+catch
+    warning('DictionarySize.m execution failed')
+end
 
 
 %% Boundary behaviour
@@ -64,10 +72,13 @@ if close_figure == 1, close all; end
 %       Same experiment with few randomly picked signals added to the 
 %       dictionary.
 
-clear 
-BoundaryBehaviour
-BoundaryBehaviour_supp
-if close_figure == 1, close all; end
+try
+    clear 
+    BoundaryBehavior
+    if close_figure == 1, close all; end
+catch
+    warning('BoundaryBehavior.m execution failed')
+end
 
 
 %% Impact of noise on the dictionary signals
@@ -79,9 +90,42 @@ if close_figure == 1, close all; end
 %       30, 60 and 90 and with SNR values randomly picked between 10 and
 %       100 for each dictionary signal.
 
-clear 
-NoisyDicoSignals
-if close_figure == 1, close all; end
+% clear 
+% NoisyDicoSignals
+% if close_figure == 1, close all; end
+
+
+
+
+
+%% ConfidenceIndex
+
+try
+    clear 
+    ConfidenceIndex
+    if close_figure == 1, close all; end
+catch
+    warning('ConfidenceIndex.m execution failed')
+end
+
+try
+    clear 
+    BoundaryBehavior_vMRF
+    if close_figure == 1, close all; end
+catch
+    warning('BoundaryBehavior_vMRF.m execution failed')
+end
+
+
+%% vascular MRF   of the dictionary.
+
+try
+    clear 
+    vMRFperformance
+    if close_figure == 1, close all; end
+catch
+    warning('vMRFperformance.m execution failed')
+end
 
 
 %% bSSFP fingerprints application
@@ -93,11 +137,16 @@ if close_figure == 1, close all; end
 %       Flip angles et repetition times used and some example fingerprints
 %       of the dictionary.
 
-clear 
-bSSFPfingerprints
-if close_figure == 1, close all; end
+try
+    clear 
+    bSSFPfingerprints
+    if close_figure == 1, close all; end
+catch
+    warning('bSSFPfingerprints.m execution failed')
+end
 
 
+%%
 
 
 
