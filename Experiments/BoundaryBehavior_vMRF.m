@@ -33,9 +33,9 @@ Model_.Lw   = 0;
 %% Load MGEFIDSE signals
 
 %dictionary filenames
-dicos   = {'inputs/new/qMC.mat',... %qMC
-           'inputs/new/Regular.mat',... %grid
-           'inputs/new/qMC.mat',... %test signals
+dicos   = {'inputs/3DvMRF/qMC.mat',... %qMC
+           'inputs/3DvMRF/Regular.mat',... %grid
+           'inputs/3DvMRF/qMC.mat',... %test signals
           };
       
 % Load echotimes
