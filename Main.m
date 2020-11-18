@@ -18,7 +18,7 @@ close_figure = 1;
 
 % Specify the number of workers for parallelization
 nb_workers = 16;
-p = parpool(nb_workers);
+%p = parpool(nb_workers);
 
 
 %% Effect of parameter space sampling

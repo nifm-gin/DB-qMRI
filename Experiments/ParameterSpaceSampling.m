@@ -16,7 +16,7 @@ disp(['Running experiment ' mfilename '.m'])
 %% Setting
 
 % Execution settings
-verbose = 1; %0, 1 or 2 for more details
+verbose = 2; %0, 1 or 2 for more details
 backup  = 1;
 
 % Signal settings
@@ -40,6 +40,7 @@ snr_test = inf;
 methods = {'DBM', 'DB-DL'}; %{'DBM', 'DB-SL'};
 sampling_strategies = {'Grid', 'Random', 'qRandom'};
 Model.snrtrain = inf;
+Model.Exec = 'cpu';
 
 
 %% Creating data
@@ -68,8 +69,8 @@ for exp = 1:length(signals) % for all experiments
         
         mRMSE_DBM   = nan(length(sampling_strategies), nb_repetition);
         mMAE_DBM    = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
-        mRMSE_DBSL  = mRMSE_DBM;
-        mMAE_DBSL   = mRMSE_DBM; mNRMSE_DBSL = mRMSE_DBM; mNMAE_DBSL = mRMSE_DBM;
+        mRMSE_DBSL  = mRMSE_DBM; mMAE_DBSL = mRMSE_DBM; mNRMSE_DBSL = mRMSE_DBM; mNMAE_DBSL = mRMSE_DBM;
+        mRMSE_DBDL  = mRMSE_DBM; mMAE_DBDL = mRMSE_DBM; mNRMSE_DBDL = mRMSE_DBM; mNMAE_DBDL = mRMSE_DBM;
         sizes       = nan(length(sampling_strategies), nb_repetition);
 
         for rep = 1:nb_repetition
@@ -91,7 +92,7 @@ for exp = 1:length(signals) % for all experiments
                 % Compute estimates
                 if any(contains(methods,'DBM'))
                     tic;
-                    Estim 	= AnalyzeMRImages(Xtest, Dico, 'DBM', [], Ytest(:,1:size(Y,2)));
+                    Estim       = AnalyzeMRImages(Xtest, Dico, 'DBM', [], Ytest(:,1:size(Y,2)));
                     t_DBM(s,rep)        = toc;
                     
                     mRMSE_DBM(s,rep)	= mean(Estim.GridSearch.Errors.Rmse);
@@ -103,7 +104,7 @@ for exp = 1:length(signals) % for all experiments
                 if any(contains(methods,'DB-SL'))
                     
                     tic;
-                    Estim 	= AnalyzeMRImages(Xtest, Dico, 'DB-SL', Model, Ytest(:,1:size(Y,2)));
+                    Estim       = AnalyzeMRImages(Xtest, Dico, 'DB-SL', Model, Ytest(:,1:size(Y,2)));
                     t_DBL(s,rep)        = toc;
                     
                     mRMSE_DBSL(s,rep)   = mean(Estim.Regression.Errors.Rmse);
@@ -115,7 +116,7 @@ for exp = 1:length(signals) % for all experiments
                 if any(contains(methods,'DB-DL'))
                     
                     tic;
-                    Estim 	= AnalyzeMRImages(Xtest, Dico, 'DB-DL', Model, Ytest(:,1:size(Y,2)));
+                    Estim       = AnalyzeMRImages(Xtest, Dico, 'DB-DL', Model, Ytest(:,1:size(Y,2)));
                     t_DBDL(s,rep)        = toc;
                     
                     mRMSE_DBDL(s,rep)    = mean(Estim.Regression.Errors.Rmse);
