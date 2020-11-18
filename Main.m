@@ -95,9 +95,6 @@ end
 % if close_figure == 1, close all; end
 
 
-
-
-
 %% ConfidenceIndex
 
 try

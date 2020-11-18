@@ -37,7 +37,7 @@ nb_repetition = 500;
 snr_test = inf;
 
 % Method settings
-methods = {'DBM', 'DB-DL'}; %{'DBM', 'DB-SL'};
+methods = {'DBM', 'DB-SL'};
 sampling_strategies = {'Grid', 'Random', 'qRandom'};
 Model.snrtrain = inf;
 Model.Exec = 'cpu';

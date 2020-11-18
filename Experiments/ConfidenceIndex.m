@@ -78,7 +78,7 @@ for rep = 1:nb_repetition
         %this line is equivalent to the previous implementation since it
         %corresponds to the integration in our estimation function of the
         %model correction.
-%         Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DBL', Params, [],[], real_snr);
+%         Estim   = AnalyzeMRImages(Xtest_noisy, [], 'DB-SL', Params, [],[], real_snr);
 
         Ygllim  = squeeze(Estim.Regression.Y(:,1:nb_param));
         Cov     = squeeze(Estim.Regression.Cov);
