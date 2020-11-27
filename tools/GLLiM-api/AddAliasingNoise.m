@@ -16,7 +16,7 @@ function [X_noisy, real_snr] = AddAliasingNoise(X, snr)
 
 narginchk(2, 2);
 
-if ~any(imag(X) ~= 0)
+if ~any(imag(X(:)) ~= 0)
     X_noisy = X + abs(X) .*(randn(size(X)) ./snr);
     
     real_snr = max(X,[],2) ./ std(X - X_noisy, [],2);

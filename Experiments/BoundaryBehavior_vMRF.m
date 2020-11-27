@@ -45,10 +45,7 @@ echtime = echtime.t;
 % Quasi-random
 load(dicos{1})
 Xqmc    = Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
-% parfor i = 1:size(Xqmc,1)
-%     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xqmc,2)), Xqmc(i,:), echtime);
-% end
-% Xqmc    = Tmp; Tmp  = [];
+Xqmc 	= interp1(Dico.Tacq(1:size(Xqmc,2))', Xqmc', echtime)';
 Yqmc    = Dico.Parameters.Par;
 
 Xqmc(Dico.Parameters.Par(:,4)== 1e-6,:) = [];
@@ -69,10 +66,7 @@ Yqmc    = Yqmc(r,:);
 % Grid
 load(dicos{2})
 Xgrid 	= Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
-% parfor i = 1:size(Xgrid,1)
-%     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xgrid,2)), Xgrid(i,:), echtime);
-% end
-% Xgrid   = Tmp; Tmp  = [];
+Xgrid 	= interp1(Dico.Tacq(1:size(Xgrid,2))', Xgrid', echtime)';
 Ygrid   = Dico.Parameters.Par;
 
 Xgrid(Dico.Parameters.Par(:,4)== 1e-6,:) = [];
@@ -93,10 +87,7 @@ Ygrid   = Ygrid(r,:);
 % Random - test signals
 load(dicos{3})
 Xtest_ 	= Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
-% parfor i = 1:size(Xtest_,1)
-%     Tmp(i,:)    = interp1(Dico.Tacq(1:size(Xtest_,2)), Xtest_(i,:), echtime);
-% end
-% Xtest_  = Tmp; Tmp  = [];
+Xtest_ 	= interp1(Dico.Tacq(1:size(Xtest_,2))', Xtest_', echtime)';
 Ytest_  = Dico.Parameters.Par;
 
 Xtest_(Dico.Parameters.Par(:,4)== 1e-6,:) = [];
@@ -115,8 +106,8 @@ Ytest_(Ytest_(:,2) > 40 *1e-6,:) = [];
 
 %% Reduce datasets to keep only signals with StO2 around 0.7
 
-bds_sto2 = [0.65 0.75];
-bds_sto2 = [0.6 0.8];
+% bds_sto2 = [0.65 0.75];
+bds_sto2 = [0 1];
 
 v   = (Ygrid(:,3) <= bds_sto2(1) | Ygrid(:,3) >= bds_sto2(2));
 Xgrid(v,:)  = [];
@@ -148,8 +139,9 @@ if use_extra_entries == 1
             13e-2   23e-6     ;
             16e-2   24e-6     ;
             19e-2   25e-6     ;
-            22e-2   26e-6     ;
-            ... %then, boundary entries
+            22e-2   26e-6     ;];
+        ext = [ext; ext + ext.*0.1.*rand(size(ext)) + ext.*0.2.*rand(size(ext))];
+    ext = [ ext;... %then, boundary entries
             max(Yqmc(:,1)) 5e-6;
             max(Yqmc(:,1)) max(Yqmc(:,2));
             15e-2 max(Yqmc(:,2));

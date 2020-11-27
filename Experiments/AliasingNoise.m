@@ -219,9 +219,10 @@ for nb_interleaves = interleaves
 
     disp(['Subsampling factor = ' num2str(nb_interleaves)])
     
-    SNR = 1./(3*nb_interleaves-2)*100;
-    Irec = reshape(AddAliasingNoise(reshape(Iacq,[],size(Iacq,3)), SNR), size(Iacq,1),size(Iacq,2),size(Iacq,3));
-
+    SNR     = 1./(3*nb_interleaves-2)*100;
+    [Irec,real_snr] = AddAliasingNoise(reshape(Iacq,[],size(Iacq,3)), SNR);
+    Irec    = reshape(Irec, size(Iacq,1),size(Iacq,2),size(Iacq,3));
+    
     if S >= 430
         imgrec{nb_interleaves,1} = Irec(:,:,5);
         imgrec{nb_interleaves,2} = Irec(:,:,140);
