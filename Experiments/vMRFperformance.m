@@ -19,12 +19,12 @@ nb_param = 3;
 nb_train_signals = 150500;
 nb_test_signals  = 100000;
 
-snr_test  	= 100;
+snr_test  	= 50;
 snr_train   = 60;
 
-dicos   = {{'inputs/new/qMC.mat', ' '},... %qMC
-           {'inputs/new/Regular.mat', ' '},... %grid
-           {'inputs/new/qMC.mat', ' '},... %test signals
+dicos   = {{'inputs/3DvMRF/qMC.mat', ' '},... %qMC
+           {'inputs/3DvMRF/Regular.mat', ' '},... %grid
+           {'inputs/3DvMRF/qMC.mat', ' '},... %test signals
           };
 use_recomputed_parameter = 0;
      
@@ -61,8 +61,9 @@ for s = 1:1
     % Quasi-random
     load(dicos{1}{s})
     if use_recomputed_parameter == 1
-        Dico.Parameters.Par(:,1) = Dico.Parameters.Par(:,7);
         Dico.Parameters.Par(:,2) = Dico.Parameters.Par(:,8);
+        Dico.Parameters.Par(:,3) = Dico.Parameters.Par(:,9);
+        Dico.Parameters.Par(:,4) = Dico.Parameters.Par(:,10);
     end
     Xqmc    = Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
     parfor i = 1:size(Xqmc,1)
@@ -85,8 +86,9 @@ for s = 1:1
     % Regular
     load(dicos{2}{s})
     if use_recomputed_parameter == 1
-        Dico.Parameters.Par(:,1) = Dico.Parameters.Par(:,7);
         Dico.Parameters.Par(:,2) = Dico.Parameters.Par(:,8);
+        Dico.Parameters.Par(:,3) = Dico.Parameters.Par(:,9);
+        Dico.Parameters.Par(:,4) = Dico.Parameters.Par(:,10);
     end
     Xgrid 	= Dico.MRSignals(:,end/2+1:end) ./ Dico.MRSignals(:,1:end/2);
     parfor i = 1:size(Xgrid,1)
@@ -109,8 +111,9 @@ for s = 1:1
     % Picking test signals
     load(dicos{3}{s})
     if use_recomputed_parameter == 1
-        Dico.Parameters.Par(:,1) = Dico.Parameters.Par(:,7);
         Dico.Parameters.Par(:,2) = Dico.Parameters.Par(:,8);
+        Dico.Parameters.Par(:,3) = Dico.Parameters.Par(:,9);
+        Dico.Parameters.Par(:,4) = Dico.Parameters.Par(:,10);
     end
     Xtest_  = Dico.MRSignals;
     parfor i = 1:size(Xtest_,1)
@@ -131,7 +134,7 @@ for s = 1:1
     
     %% DBL method training
     
-    Model_.K    = 50;
+    Model_.K    = 200;
     Model_.Lw   = 0;
     
     r           = randperm(size(Xqmc,1));
@@ -363,3 +366,31 @@ set(h, 'fontsize',15)
 if backup == 1
     savefig(fig, ['figures/' 'vMRFperformance'])
 end
+
+
+%% Values
+
+disp('%%% BVf RMSE %%')
+disp(['CEF:  ' num2str(nanmean(1e2*reshape(Rmse_anlt(:,:,:,1), 1,[])), '%.2f')  ' %'])
+disp(['DBM:  ' num2str(nanmean(1e2*reshape(Rmse_grid(:,:,:,1), 1,[])), '%.2f')  ' %'])
+disp(['DBDL: ' num2str(nanmean(1e2*reshape(Rmse_nn(:,:,:,1), 1,[])), '%.2f')    ' %'])
+disp(['DBSL: ' num2str(nanmean(1e2*reshape(Rmse_gllim(:,:,:,1), 1,[])), '%.2f') ' %'])
+disp(['DBSL/CEF: ' num2str(nanmean(1e2*reshape(Rmse_anlt(:,:,:,1) - Rmse_gllim(:,:,:,1), 1,[])), '%.2f') ' %'])
+disp(['DBSL/DBM: ' num2str(nanmean(1e2*reshape(Rmse_grid(:,:,:,1) - Rmse_gllim(:,:,:,1), 1,[])), '%.2f') ' %'])
+
+disp(' ')
+disp('%% VSI RMSE %%')
+disp(['CEF:  ' num2str(nanmean(1e6*reshape(Rmse_anlt(:,:,:,2), 1,[])), '%.2f')  ' um'])
+disp(['DBM:  ' num2str(nanmean(1e6*reshape(Rmse_grid(:,:,:,2), 1,[])), '%.2f')  ' um'])
+disp(['DBDL: ' num2str(nanmean(1e6*reshape(Rmse_nn(:,:,:,2), 1,[])), '%.2f')    ' um'])
+disp(['DBSL: ' num2str(nanmean(1e6*reshape(Rmse_gllim(:,:,:,2), 1,[])), '%.2f') ' um'])
+disp(['DBSL/CEF: ' num2str(nanmean(1e6*reshape(Rmse_anlt(:,:,:,2) - Rmse_gllim(:,:,:,2), 1,[])), '%.2f') ' um'])
+disp(['DBSL/DBM: ' num2str(nanmean(1e6*reshape(Rmse_grid(:,:,:,2) - Rmse_gllim(:,:,:,2), 1,[])), '%.2f') ' um'])
+
+disp(' ')
+disp('%% CI %%')
+disp(['Max diff RMSE - CI:  BVf= ' num2str(max(reshape(1e2*abs(Rmse_gllim(:,:,:,1) - CI(:,:,:,1)), 1,[])), '%.2f')...
+    ' %, VSI= ' num2str(max(reshape(1e6*abs(Rmse_gllim(:,:,:,2) - CI(:,:,:,2)), 1,[])), '%.2f') ' um'])
+disp(['Mean diff RMSE - CI: BVf= ' num2str(nanmean(reshape(1e2*abs(Rmse_gllim(:,:,:,1) - CI(:,:,:,1)), 1,[])), '%.2f')...
+    ' %, VSI= ' num2str(nanmean(reshape(1e6*abs(Rmse_gllim(:,:,:,2) - CI(:,:,:,2)), 1,[])), '%.2f') ' um'])
+

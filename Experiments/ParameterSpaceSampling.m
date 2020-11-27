@@ -37,7 +37,7 @@ nb_repetition = 500;
 snr_test = inf;
 
 % Method settings
-methods = {'DBM', 'DB-DL'}; %{'DBM', 'DB-SL'};
+methods = {'DBM', 'DB-DL', 'DB-SL'};
 sampling_strategies = {'Grid', 'Random', 'qRandom'};
 Model.snrtrain = inf;
 Model.Exec = 'cpu';
@@ -160,7 +160,7 @@ for i = 1:length(signals)
     if exist(filename,'file')
         load(filename,'mRMSE_DBM','mRMSE_DBSL','mRMSE_DBDL','nb_param','nb_train_signals');
         DBM_rmse{i} = mRMSE_DBM;
-        DBL_rmse{i} = mRMSE_DBDL;
+        DBL_rmse{i} = mRMSE_DBSL;
     else
         DBM_rmse{i} = [];
         DBL_rmse{i} = [];
@@ -179,7 +179,7 @@ c = 0;
 for i = [1 4 7]
     c = c + 1;
     
-    dat     = DBL_rmse{i}';
+    dat     = DBM_rmse{i}';
     h(c)    = subplot(1,3,c);
     
     boxplot(dat,'symbol','')
@@ -193,9 +193,13 @@ for i = [1 4 7]
     
     title([titles{c} ' ' num2str(title_nb_param(i)) ' parameters'])
     
-%     m = mean(dat);
+    m = mean(dat);
+    s = std(dat);
 %     disp(['qRand / Grid: ' num2str(1 - m(3) / m(1))])
 %     disp(['qRand / Rand: ' num2str(1 - m(3) / m(2))])
+    disp(['P = ' num2str(title_nb_param(i))])    
+    disp(1e3*m)
+    disp(1e3*s)
 end
 
 linkaxes(h,'y')
