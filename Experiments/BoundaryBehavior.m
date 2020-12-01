@@ -102,7 +102,7 @@ Xtest_  = AddNoise(Xtest_, snr);
 %% Learnings
 
 % DB-SL/DB-DL learning for initial dico
-Dico = FormatDico(Xtrain_ext, Ytrain_ext);
+Dico = FormatDico(Xtrain, Ytrain);
 [~,Model]       = AnalyzeMRImages([], Dico, 'DB-SL');
 [~,NeuralNet]	= AnalyzeMRImages([], Dico, 'DB-DL');
 
@@ -154,7 +154,7 @@ for s1 = floor(lw/2)+1:length(intt_)-floor(lw/2)
             [Rmse_grid(s1,s2,:),~, Mae_grid(s1,s2,:)] = EvaluateEstimation(Ytest, Ygrid);
             
             %DB-SL
-            Estim   = AnalyzeMRImages(Xtest, [], 'DB-SL', Model); 
+            Estim   = AnalyzeMRImages(Xtest, [], 'DB-SL', Model, [],[], snr); 
             Ygllim  = Estim.Regression.Y(:,1:nb_param);
             [Rmse_gllim(s1,s2,:),~, Mae_gllim(s1,s2,:)] = EvaluateEstimation(Ytest, Ygllim);
             CI(s1,s2,:) = nanmean(squeeze(Estim.Regression.Cov.^.5));
@@ -171,7 +171,7 @@ for s1 = floor(lw/2)+1:length(intt_)-floor(lw/2)
             [Rmse_grid_ext(s1,s2,:),~, Mae_grid_ext(s1,s2,:)] = EvaluateEstimation(Ytest, Ygrid);
             
             %DB-SL
-            Estim   = AnalyzeMRImages(Xtest, [], 'DB-SL', Model_ext); 
+            Estim   = AnalyzeMRImages(Xtest, [], 'DB-SL', Model_ext, [],[], snr); 
             Ygllim  = Estim.Regression.Y(:,1:nb_param);
             [Rmse_gllim_ext(s1,s2,:),~, Mae_gllim_ext(s1,s2,:)] = EvaluateEstimation(Ytest, Ygllim);
             CI_ext(s1,s2,:) = nanmean(squeeze(Estim.Regression.Cov.^.5));
@@ -203,7 +203,7 @@ ttt     = ttt(~cellfun('isempty',ttt));
 
 mycmap = mycmap_extended;
 
-bounds  = [0 .5];
+bounds  = [0 .2];
 
 h(1) = subplot(341);
 err     = Rmse_grid;
@@ -228,7 +228,7 @@ set(gca,'YDir','normal')
 
 
 h(3) = subplot(342);
-err     = Rmse_gllim;
+err     = Rmse_nn;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
@@ -250,7 +250,7 @@ set(gca,'YDir','normal')
 
 
 h(3) = subplot(343);
-err     = Rmse_nn;
+err     = Rmse_gllim;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
@@ -297,7 +297,7 @@ set(gca,'YDir','normal')
 
 
 h(6) = subplot(346);
-err     = Rmse_gllim_ext;
+err     = Rmse_nn_ext;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
@@ -320,7 +320,7 @@ set(gca,'YDir','normal')
 
 
 h(7) = subplot(347);
-err     = Rmse_nn_ext;
+err     = Rmse_gllim_ext;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
@@ -343,43 +343,42 @@ set(gca,'YDir','normal')
 
 
 
-% h(4) = subplot(344);
-% err     = CI*10;
-% imagesc(inter1,inter2,mean(err,3), bounds)
-% hold on
-% for i = 1:length(int)
-%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-%     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-%     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-% end
-% plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
-% colormap(mycmap()); colorbar
-% xlabel('Second parameter'); ylabel('First parameter')
-% xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-% ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-% title('(supp)')
+h(4) = subplot(344);
+err     = CI*10;
+imagesc(inter1,inter2,mean(err,3), bounds)
+hold on
+for i = 1:length(int)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+end
+colormap(mycmap()); colorbar
+xlabel('Second parameter'); ylabel('First parameter')
+xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+title('(supp)')
      
 set(gca, 'fontsize', 18)
 set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
 
-% h(8) = subplot(348);
-% err     = CI_ext*10;
-% imagesc(inter1,inter2,mean(err,3), bounds)
-% hold on
-% for i = 1:length(int)
-%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-%     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-%     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-% end
-% plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
-% colormap(mycmap()); colorbar
-% xlabel('Second parameter'); ylabel('First parameter')
-% xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-% ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-% title('(supp)')
+h(8) = subplot(348);
+err     = CI_ext*10;
+imagesc(inter1,inter2,mean(err,3), bounds)
+hold on
+for i = 1:length(int)
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+end
+plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
+colormap(mycmap()); colorbar
+xlabel('Second parameter'); ylabel('First parameter')
+xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+title('(supp)')
     
 set(gca, 'fontsize', 18)
 set(gca,'DataAspectRatio',[10 10 10])
@@ -471,7 +470,7 @@ end
 % plot(reshape(mah,1,[]), reshape(mean(err,3),1,[]), '.')
 % subplot(122);
 % plot(reshape(mah,1,[]), reshape(mean(CI(:,:,1),3),1,[]), '.')
-
+% 
 % if length(numel(mask)) == 3
 %     mask = mask(:,:,1) + mask(:,:,2);
 %     mask_out = mask_out(:,:,1) & mask_out(:,:,2);
