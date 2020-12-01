@@ -35,6 +35,7 @@ nb_test_signals = 10000;
 K       = 50; 
 fast_limit = 500;
 dbdl_computation = 1;
+NeuralNet_.Exec = 'cpu';
 
 
 %% Init data
@@ -91,7 +92,7 @@ for n = 1:size(nb_signals,1)
         [~,Model] = AnalyzeMRImages([],Dico_DBL,'DB-SL',Model_);
         
         if dbdl_computation == 1
-            [~,NeuralNet] = AnalyzeMRImages([],Dico_DBL,'DB-DL');
+            [~,NeuralNet] = AnalyzeMRImages([],Dico_DBL,'DB-DL',NeuralNet_);
         end
         
         % Need to remove parfor loop for memory requirement computation
@@ -144,18 +145,15 @@ for n = 1:size(nb_signals,1)
                 mMAE_nn(snr,n,f)    = nanmean(Estim.Regression.Errors.Mae);
             end
             
-%             %memory requirement
-%             %other lines of the for loop can be ignored + parfor -> for
-%             me      = whos('Dico_DBM');
-%             mem_size_grid(snr,n,f)  = me.bytes;
+            %memory requirement
+            me      = whos('Dico_DBM');
+            mem_size_grid(snr,n,f)  = me.bytes;
 
-%             [Estim, Model] = AnalyzeMRImages([],Dico_DBL,'DB-SL',Model_);
-%             me      = whos('Model');
-%             mem_size_gllim(snr,n,f) = me.bytes;
+            me      = whos('Model');
+            mem_size_gllim(snr,n,f) = me.bytes;
 
-%             [Estim, NeuralNet] = AnalyzeMRImages([],Dico_DBL,'DB-DL');
-%             me      = whos('NeuralNet');
-%             mem_size_nn(snr,n,f)  = me.bytes;
+            me      = whos('NeuralNet');
+            mem_size_nn(snr,n,f)  = me.bytes;
             
         end %snr
     end
@@ -167,8 +165,9 @@ t(:,2,:,:)      = t_gllim;
 t(:,3,:,:)      = t_gllim_learn;
 
 %memory (bits)
-% mem(:,1,:,:)  	= mem_size_grid;
-% mem(:,2,:,:)  	= mem_size_gllim;
+mem(:,1,:,:)  	= mem_size_grid;
+mem(:,2,:,:)  	= mem_size_gllim;
+mem(:,3,:,:)  	= mem_size_nn;
 
 %errors
 mNRMSE(:,1,:,:) = mNRMSE_grid;
