@@ -38,6 +38,7 @@ int_all = {{[.20 .30], [.30 .60]},...
            {[.70 .80], [.10 .25]},...
            {[.40 .65], [.30 .45]},...
            };
+NeuralNet_.Exec = 'cpu';
 
 
 %% Creating data
@@ -102,14 +103,14 @@ Xtest_  = AddNoise(Xtest_, snr);
 %% Learnings
 
 % DB-SL/DB-DL learning for initial dico
-Dico = FormatDico(Xtrain, Ytrain);
+Dico    = FormatDico(Xtrain, Ytrain);
 [~,Model]       = AnalyzeMRImages([], Dico, 'DB-SL');
-[~,NeuralNet]	= AnalyzeMRImages([], Dico, 'DB-DL');
+[~,NeuralNet]	= AnalyzeMRImages([], Dico, 'DB-DL', NeuralNet_);
 
 % DB-SL/DB-DL learning for extended dico (ie with extra entries)
-Dico = FormatDico(Xtrain_ext, Ytrain_ext);
-[~,Model_ext] 	= AnalyzeMRImages([], Dico, 'DB-SL');
-[~,NeuralNet_ext] = AnalyzeMRImages([], Dico, 'DB-DL');
+Dico	= FormatDico(Xtrain_ext, Ytrain_ext);
+[~,Model_ext]   = AnalyzeMRImages([], Dico, 'DB-SL');
+[~,NeuralNet_ext] = AnalyzeMRImages([], Dico, 'DB-DL', NeuralNet_);
 
 
 %% Estimation
@@ -203,7 +204,7 @@ ttt     = ttt(~cellfun('isempty',ttt));
 
 mycmap = mycmap_extended;
 
-bounds  = [0 .2];
+bounds  = [0 .5];
 
 h(1) = subplot(341);
 err     = Rmse_grid;
@@ -344,7 +345,7 @@ set(gca,'YDir','normal')
 
 
 h(4) = subplot(344);
-err     = CI*10;
+err     = CI;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
@@ -364,7 +365,7 @@ set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
 
 h(8) = subplot(348);
-err     = CI_ext*10;
+err     = CI_ext;
 imagesc(inter1,inter2,mean(err,3), bounds)
 hold on
 for i = 1:length(int)
@@ -384,122 +385,137 @@ set(gca, 'fontsize', 18)
 set(gca,'DataAspectRatio',[10 10 10])
 set(gca,'YDir','normal')
 
-clear mycmap;
-mycmap = mycmap();
 
-bounds2 = [-0.2 0.2];
+% mycmap = mycmap();
+% 
+% bounds2 = [-0.2 0.2];
+% 
+% h(9) = subplot(349);
+% err     = Rmse_grid_ext - Rmse_grid;
+% imagesc(inter1,inter2,mean(err,3), bounds2)
+% hold on
+% for i = 1:length(int)
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+% end
+% plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
+% colormap(mycmap); colorbar
+% xlabel('Second parameter'); ylabel('First parameter')
+% xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% title('Diff')
+% 
+% set(gca, 'fontsize', 18)
+% set(gca,'DataAspectRatio',[10 10 10])
+% set(gca,'YDir','normal')
+% 
+% 
+% h(10) = subplot(3,4,10);
+% err     = Rmse_gllim_ext - Rmse_gllim;
+% imagesc(inter1,inter2,mean(err,3), bounds2)
+% hold on
+% for i = 1:length(int)
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+% end
+% plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
+% colormap(mycmap); colorbar
+% xlabel('Second parameter'); ylabel('First parameter')
+% xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% title('Diff')
+% 
+% set(gca, 'fontsize', 18)
+% set(gca,'DataAspectRatio',[10 10 10])
+% set(gca,'YDir','normal')
+% 
+% 
+% h(11) = subplot(3,4,11);
+% err     = Rmse_nn_ext - Rmse_nn;
+% imagesc(inter1,inter2,mean(err,3), bounds2)
+% hold on
+% for i = 1:length(int)
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+%     line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
+% end
+% plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
+% colormap(mycmap); colorbar
+% xlabel('Second parameter'); ylabel('First parameter')
+% xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
+% title('Diff')
+% 
+% set(gca, 'fontsize', 18)
+% set(gca,'DataAspectRatio',[10 10 10])
+% set(gca,'YDir','normal')
 
-h(9) = subplot(349);
-err     = Rmse_grid_ext - Rmse_grid;
-imagesc(inter1,inter2,mean(err,3), bounds2)
-hold on
-for i = 1:length(int)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-end
-plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
-colormap(mycmap); colorbar
-xlabel('Second parameter'); ylabel('First parameter')
-xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-title('Diff')
 
-set(gca, 'fontsize', 18)
-set(gca,'DataAspectRatio',[10 10 10])
-set(gca,'YDir','normal')
+% fig=figure; hold on;
+% for m =1:2
+%     x1 = reshape(mean(CI,3).*mask(:,:,m),1,[])/1.18;
+%     x2 = reshape(mean(Rmse_gllim,3).*mask(:,:,m),1,[]);
+%     v = x1 == 0;
+%     x1(v) = [];
+%     x2(v) = [];
+%     plot(x1,x2, '.','markersize',12);
+%     numel(x1)
+% end; plot([0 0.1], [0 0.1], 'k--')
+% xlim([0.005 0.01])
+% ylim([0.005 0.01])
 
 
-h(10) = subplot(3,4,10);
-err     = Rmse_gllim_ext - Rmse_gllim;
-imagesc(inter1,inter2,mean(err,3), bounds2)
-hold on
-for i = 1:length(int)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-end
-plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
-colormap(mycmap); colorbar
-xlabel('Second parameter'); ylabel('First parameter')
-xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-title('Diff')
-
-set(gca, 'fontsize', 18)
-set(gca,'DataAspectRatio',[10 10 10])
-set(gca,'YDir','normal')
-
-
-h(11) = subplot(3,4,11);
-err     = Rmse_nn_ext - Rmse_nn;
-imagesc(inter1,inter2,mean(err,3), bounds2)
-hold on
-for i = 1:length(int)
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(1)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(1) int{i}{2}(2)], [int{i}{1}(2) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(1) int{i}{2}(1)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-    line([int{i}{2}(2) int{i}{2}(2)], [int{i}{1}(1) int{i}{1}(2)], 'linestyle', '--', 'color','w',  'linewidth',3,'HandleVisibility','off')
-end
-plot(newY(:,2),newY(:,1), 'wx', 'markersize', 12,'HandleVisibility','off')
-colormap(mycmap); colorbar
-xlabel('Second parameter'); ylabel('First parameter')
-xlim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-ylim([intt_(floor(lw/2)+1) intt_(length(intt_)-floor(lw/2))])
-title('Diff')
-
-set(gca, 'fontsize', 18)
-set(gca,'DataAspectRatio',[10 10 10])
-set(gca,'YDir','normal')
-
-
- 
 %%
 
 if backup == 1
-    savefig(fig, ['figures/' 'BoundaryBehavior'])
+    savefig(fig, ['figures/' 'BoundaryBehavior_CI'])
 end
 
 
 %%
 
-% figure;
-% subplot(121);
-% plot(reshape(mah,1,[]), reshape(mean(err,3),1,[]), '.')
-% subplot(122);
-% plot(reshape(mah,1,[]), reshape(mean(CI(:,:,1),3),1,[]), '.')
-% 
-% if length(numel(mask)) == 3
-%     mask = mask(:,:,1) + mask(:,:,2);
-%     mask_out = mask_out(:,:,1) & mask_out(:,:,2);
-% end
-% 
-% msk = mask_out;
-% 
-% err_patches = (mean(Rmse_grid,3) .* msk);
-% err_patches(err_patches == 0) = nan;
-% err_patches_ext = (mean(Rmse_grid_ext,3) .* msk);
-% err_patches_ext(err_patches_ext == 0) = nan;
-% 
-% disp('Relat error (%) with DM:')
-% disp(100* (nanmean(err_patches(:)) - nanmean(err_patches_ext(:))) ./nanmean(err_patches(:)))
-% 
-% err_patches = (mean(Rmse_nn,3) .* msk);
-% err_patches(err_patches == 0) = nan;
-% err_patches_ext = (mean(Rmse_nn_ext,3) .* msk);
-% err_patches_ext(err_patches_ext == 0) = nan;
-% 
-% disp('Relat error (%) with DB-DL:')
-% disp(100* (nanmean(err_patches(:)) - nanmean(err_patches_ext(:))) ./nanmean(err_patches(:)))
-% 
-% err_patches = (mean(Rmse_gllim,3) .* msk);
-% err_patches(err_patches == 0) = nan;
-% err_patches_ext = (mean(Rmse_gllim_ext,3) .* msk);
-% err_patches_ext(err_patches_ext == 0) = nan;
-% 
-% disp('Relat error (%) with DB-SL:')
-% disp(100* (nanmean(err_patches(:)) - nanmean(err_patches_ext(:))) ./nanmean(err_patches(:)))
+err = Rmse_gllim;
+
+figure;
+subplot(121);
+plot(reshape(mah,1,[]), reshape(mean(err,3),1,[]), '.')
+subplot(122);
+plot(reshape(mah,1,[]), reshape(mean(CI(:,:,1),3),1,[]), '.')
+
+if length(numel(mask)) == 3
+    mask_ = mask(:,:,1) & mask(:,:,2);
+    mask_out = mask_out(:,:,1) & mask_out(:,:,2);
+end
+
+msk = mask_out;
+
+err_patches = (mean(Rmse_grid,3) .* msk);
+err_patches(err_patches == 0) = nan;
+err_patches_ext = (mean(Rmse_grid_ext,3) .* msk);
+err_patches_ext(err_patches_ext == 0) = nan;
+
+disp('Relat error (%) with DM:')
+disp(100* (nanmean(err_patches(:)) - nanmean(err_patches_ext(:))) ./nanmean(err_patches(:)))
+
+err_patches = (mean(Rmse_nn,3) .* msk);
+err_patches(err_patches == 0) = nan;
+err_patches_ext = (mean(Rmse_nn_ext,3) .* msk);
+err_patches_ext(err_patches_ext == 0) = nan;
+
+disp('Relat error (%) with DB-DL:')
+disp(100* (nanmean(err_patches(:)) - nanmean(err_patches_ext(:))) ./nanmean(err_patches(:)))
+
+err_patches = (mean(Rmse_gllim,3) .* msk);
+err_patches(err_patches == 0) = nan;
+err_patches_ext = (mean(Rmse_gllim_ext,3) .* msk);
+err_patches_ext(err_patches_ext == 0) = nan;
+
+disp('Relat error (%) with DB-SL:')
+disp(100* (nanmean(err_patches(:)) - nanmean(err_patches_ext(:))) ./nanmean(err_patches(:)))
 
 

@@ -20,12 +20,11 @@ backup  = 1;
 % Experiment settings
 
 % Regression settings
-Parameters.K = 50;
-Parameters.cstr.Sigma  = 'd*';
-Parameters.cstr.Gammat = ''; 
-Parameters.cstr.Gammaw = '';
-Parameters.Lw = 0;
-snr_train = inf;
+Model.K = 50;
+Model.cstr.Sigma  = 'd*';
+Model.cstr.Gammat = ''; 
+Model.cstr.Gammaw = '';
+Model.Lw = 0;
 
 
 %% Creating data

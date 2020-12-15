@@ -33,14 +33,14 @@ signals = [512    1728   4096 ... %8^3 12^3 16^3
 
 % Experiment settings
 nb_test_signals = 1000;
-nb_repetition = 500;
+nb_repetition = 100;
 snr_test = inf;
 
 % Method settings
 methods = {'DBM', 'DB-DL', 'DB-SL'};
 sampling_strategies = {'Grid', 'Random', 'qRandom'};
 Model.snrtrain = inf;
-Model.Exec = 'cpu';
+Model.Exec = 'gpu';
 
 
 %% Creating data
@@ -71,7 +71,6 @@ for exp = 1:length(signals) % for all experiments
         mMAE_DBM    = mRMSE_DBM; mNRMSE_DBM = mRMSE_DBM; mNMAE_DBM = mRMSE_DBM;
         mRMSE_DBSL  = mRMSE_DBM; mMAE_DBSL = mRMSE_DBM; mNRMSE_DBSL = mRMSE_DBM; mNMAE_DBSL = mRMSE_DBM;
         mRMSE_DBDL  = mRMSE_DBM; mMAE_DBDL = mRMSE_DBM; mNRMSE_DBDL = mRMSE_DBM; mNMAE_DBDL = mRMSE_DBM;
-        sizes       = nan(length(sampling_strategies), nb_repetition);
 
         for rep = 1:nb_repetition
 
@@ -81,10 +80,9 @@ for exp = 1:length(signals) % for all experiments
             [Xtest,  Ytest]  = GenerateScalableSignals(p(1:nb_param), int, nb_test_signals, 'Random');
             Xtest   = AddNoise(Xtest, snr_test);
 
-            parfor s = 1:length(sampling_strategies)
+            for s = 1:length(sampling_strategies)
 
                 [X, Y]  = GenerateScalableSignals(p(1:nb_param), int, nb_train_signals, sampling_strategies{s});
-                sizes(s,rep) = size(Y,1);
 
                 % Prepare dico
                 Dico = FormatDico(abs(X), Y);
@@ -152,7 +150,8 @@ end
 %% Displaying
 
 DBM_rmse = struct([]);
-DBL_rmse = struct([]);
+DBDL_rmse = struct([]);
+DBSL_rmse = struct([]);
 
 for i = 1:length(signals)
     filename = ['temp/ParameterSpaceSampling/' num2str(Id) '/' num2str(param(i)) '-' num2str(signals(i)) '.mat'];
@@ -160,10 +159,12 @@ for i = 1:length(signals)
     if exist(filename,'file')
         load(filename,'mRMSE_DBM','mRMSE_DBSL','mRMSE_DBDL','nb_param','nb_train_signals');
         DBM_rmse{i} = mRMSE_DBM;
-        DBL_rmse{i} = mRMSE_DBSL;
+        DBDL_rmse{i} = mRMSE_DBDL;
+        DBSL_rmse{i} = mRMSE_DBSL;
     else
         DBM_rmse{i} = [];
-        DBL_rmse{i} = [];
+        DBDL_rmse{i} = [];
+        DBSL_rmse{i} = [];
     end
     
     title_nb_param(i) = nb_param;
@@ -179,7 +180,7 @@ c = 0;
 for i = [1 4 7]
     c = c + 1;
     
-    dat     = DBM_rmse{i}';
+    dat     = DBSL_rmse{i}';
     h(c)    = subplot(1,3,c);
     
     boxplot(dat,'symbol','')
@@ -195,11 +196,14 @@ for i = [1 4 7]
     
     m = mean(dat);
     s = std(dat);
-%     disp(['qRand / Grid: ' num2str(1 - m(3) / m(1))])
-%     disp(['qRand / Rand: ' num2str(1 - m(3) / m(2))])
-    disp(['P = ' num2str(title_nb_param(i))])    
-    disp(1e3*m)
-    disp(1e3*s)
+    disp (' ')
+    disp(['Rand  / Grid: ' num2str((1 - m(2) / m(1))*100)])
+    disp(['qRand / Grid: ' num2str((1 - m(3) / m(1))*100)])
+    disp(['qRand / Rand: ' num2str((1 - m(3) / m(2))*100)])
+    
+%     disp(['P = ' num2str(title_nb_param(i))])    
+%     disp(1e3*m)
+%     disp(1e3*s)
 end
 
 linkaxes(h,'y')
@@ -211,9 +215,9 @@ alpha   = 0.001;
 
 fig_supp = figure;
 
-for i = 1:length(DBL_rmse)
+for i = 1:length(DBSL_rmse)
     
-    dat     = [DBM_rmse{i}; DBL_rmse{i}]';
+    dat     = [DBDL_rmse{i}; DBSL_rmse{i}]';
     h(i)    = subplot(3,3,i);
     
     boxplot(dat,'symbol','','OutlierSize',1)
@@ -281,7 +285,8 @@ for i = 1:length(DBL_rmse)
 %     end
 %     hold off
     
-%     m = mean(dat);
+    m = mean(dat);
+    tmp(i) = (m(4) - m(6)) ./m(4);
 %     disp(['qRand / Grid: ' num2str(1 - m(6) / m(4))])
 %     disp(['qRand / Rand: ' num2str(1 - m(6) / m(5))])
 end
